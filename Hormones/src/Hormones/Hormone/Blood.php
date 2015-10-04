@@ -28,7 +28,7 @@ class Blood extends HormonesQueryAsyncTask{
 	}
 	public function onRun(){
 		$db = $this->getDb();
-		$mResult = $db->query("SELECT id,type,receptors,creation,json FROM blood WHERE (receptors & $this->shiftedOrgan) = $this->shiftedOrgan");
+		$mResult = $db->query("SELECT id,type,receptors,creation,json,tags FROM blood WHERE (receptors & $this->shiftedOrgan) = $this->shiftedOrgan");
 		$output = [];
 		while(is_array($row = $mResult->fetch_assoc())){
 			$output[] = $row;
@@ -38,6 +38,17 @@ class Blood extends HormonesQueryAsyncTask{
 		$this->setResult($output);
 	}
 	public function onCompletion(Server $server){
-		// TODO execute hormones
+		$main = HormonesPlugin::getInstance($server);
+		if($main === null){
+			return;
+		}
+		foreach($this->getResult() as $row){
+			try{
+				$hormone = $main->getHormone($row["type"], (int) $row["receptors"], (int) $row["creation"], json_decode($row["json"], true), array_filter(explode(",", $row["tags"])), (int) $row["id"]);
+				$hormone->execute();
+			}catch(\RuntimeException $e){
+				$main->getLogger()->error($e->getMessage());
+			}
+		}
 	}
 }

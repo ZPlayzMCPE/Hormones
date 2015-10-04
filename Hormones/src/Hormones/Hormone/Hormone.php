@@ -15,7 +15,11 @@
 
 namespace Hormones\Hormone;
 
+use Hormones\HormonesPlugin;
+
 abstract class Hormone{
+	/** @var HormonesPlugin */
+	private $main;
 	/** @var int */
 	private $receptors;
 	/** @var int */
@@ -26,15 +30,16 @@ abstract class Hormone{
 	private $tags;
 	/** @var int|null */
 	private $id;
-	public function __construct($receptors, $creationTime, $data, $tags = [], $id = null){
+	public function __construct(HormonesPlugin $main, int $receptors, int $creationTime, $data, array $tags = [], $id = null){
+		$this->main = $main;
 		$this->receptors = $receptors;
 		$this->creationTime = $creationTime;
 		$this->data = $data;
 		$this->tags = $tags;
 		$this->id = $id;
 	}
-	public static function getTypeName() : string{
-		return (new \ReflectionClass(static::class))->getShortName();
+	public function getTypeName() : string{
+		return (new \ReflectionClass($this))->getShortName();
 	}
 	/**
 	 * @return int
@@ -72,4 +77,13 @@ abstract class Hormone{
 	public function setId(int $id){
 		$this->id = $id;
 	}
+
+	public function heart(){
+		new Vein($this);
+	}
+	public function getMain() : HormonesPlugin{
+		return $this->main;
+	}
+
+	public abstract function execute();
 }

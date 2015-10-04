@@ -33,7 +33,7 @@ class HormonesPlugin extends PluginBase{
 
 	/** @var FastTransfer */
 	private $fastTransfer;
-	/** @var \ReflectionMethod[] */
+	/** @var string[]|Hormone[] */
 	private $hormoneTypes = [];
 	/** @var array */
 	private $mysqlDetails;
@@ -229,7 +229,25 @@ class HormonesPlugin extends PluginBase{
 		if(strlen($shortName) > 63){
 			throw new \OverflowException("Class name $shortName is too long; hormone type names must not exceed 63 characters.");
 		}
-		$this->hormoneTypes[$shortName] = $constructor;
+		$this->hormoneTypes[$shortName] = $class;
+	}
+	/**
+	 * @param string $type
+	 * @param int $receptors
+	 * @param int $creationTime
+	 * @param mixed $data
+	 * @param string[] $tags
+	 * @param null $id
+	 * @return Hormone
+	 */
+	public function getHormone(string $type, int $receptors, int $creationTime, $data, $tags = [], $id = null) : Hormone{
+		if(isset($this->hormoneTypes[$type])){
+			$class = $this->hormoneTypes[$type];
+			/** @var Hormone $hormone */
+			$hormone = new $class($this, $receptors, $creationTime, $data, $tags, $id);
+			return $hormone;
+		}
+		throw new RuntimeException("Unknown hormone type: $type");
 	}
 	/**
 	 * @param Server $server

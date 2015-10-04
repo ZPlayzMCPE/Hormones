@@ -35,17 +35,16 @@ class Vein extends HormonesQueryAsyncTask{
 	private $hormoneRef;
 
 	/**
-	 * @param HormonesPlugin $main
 	 * @param Hormone $hormone
 	 */
-	public function __construct(HormonesPlugin $main, Hormone $hormone){
-		parent::__construct($main->getMysqlDetails());
+	public function __construct(Hormone $hormone){
+		parent::__construct($hormone->getMain()->getMysqlDetails());
 		$this->type = $hormone->getTypeName();
 		$this->receptors = $hormone->getReceptors();
 		$this->creation = $hormone->getCreationTime();
 		$this->tags = "," . implode(", ", $hormone->getTags()) . ",";
 		$this->json = json_encode($hormone->getData());
-		$this->hormoneRef = $main->storeObject($hormone); // weak?
+		$this->hormoneRef = $hormone->getMain()->storeObject($hormone); // weak?
 	}
 	public function onRun(){
 		$db = $this->getDb();
