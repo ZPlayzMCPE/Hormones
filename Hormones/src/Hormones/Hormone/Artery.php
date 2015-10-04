@@ -20,14 +20,14 @@ use pocketmine\scheduler\PluginTask;
 
 class Artery extends PluginTask{
 	/** @var Blood|null */
-	private $lastArtery;
+	private $lastBlood;
 	public function onRun($currentTick){
-		if($this->lastArtery !== null and !$this->lastArtery->queryFinished){
+		if($this->lastBlood !== null and !$this->lastBlood->queryFinished){
 			return;
 		}
 		/** @var HormonesPlugin $owner */ // ASSERTION!
 		$owner = $this->getOwner();
-		$this->lastArtery = new Blood($owner);
-		$owner->getServer()->getScheduler()->scheduleAsyncTask($this->lastArtery);
+		$this->lastBlood = new Blood($owner);
+		$owner->getServer()->getScheduler()->scheduleAsyncTask($this->lastBlood);
 	}
 }
