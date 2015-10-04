@@ -15,6 +15,7 @@
 
 namespace Hormones\Hormone;
 
+use Hormones\Event\HormoneReceiveEvent;
 use Hormones\HormonesPlugin;
 use Hormones\HormonesQueryAsyncTask;
 use pocketmine\Server;
@@ -45,7 +46,10 @@ class Blood extends HormonesQueryAsyncTask{
 		foreach($this->getResult() as $row){
 			try{
 				$hormone = $main->getHormone($row["type"], (int) $row["receptors"], (int) $row["creation"], json_decode($row["json"], true), array_filter(explode(",", $row["tags"])), (int) $row["id"]);
-				$hormone->execute();
+				$main->getServer()->getPluginManager()->callEvent($ev = new HormoneReceiveEvent($main, $hormone));
+				if(!$ev->isCancelled()){
+					$hormone->execute();
+				}
 			}catch(\RuntimeException $e){
 				$main->getLogger()->error($e->getMessage());
 			}

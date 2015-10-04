@@ -15,6 +15,7 @@
 
 namespace Hormones\Hormone;
 
+use Hormones\Event\HormoneReleaseEvent;
 use Hormones\HormonesPlugin;
 
 abstract class Hormone{
@@ -77,12 +78,15 @@ abstract class Hormone{
 	public function setId(int $id){
 		$this->id = $id;
 	}
-
-	public function heart(){
-		new Vein($this);
-	}
 	public function getMain() : HormonesPlugin{
 		return $this->main;
+	}
+
+	public function release(){
+		$this->getMain()->getServer()->getPluginManager()->callEvent($ev = new HormoneReleaseEvent($this->getMain(), $this));
+		if(!$ev->isCancelled()){
+			$this->getMain()->getServer()->getScheduler()->scheduleAsyncTask(new Vein($this));
+		}
 	}
 
 	public abstract function execute();
