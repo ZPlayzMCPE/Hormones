@@ -82,7 +82,7 @@ abstract class Hormone{
 		return $this->main;
 	}
 
-	public function release(){
+	public function secrete(){
 		$this->getMain()->getServer()->getPluginManager()->callEvent($ev = new HormoneReleaseEvent($this->getMain(), $this));
 		if(!$ev->isCancelled()){
 			$this->getMain()->getServer()->getScheduler()->scheduleAsyncTask(new Vein($this));
@@ -90,4 +90,8 @@ abstract class Hormone{
 	}
 
 	public abstract function execute();
+
+	public function clean(){
+		$this->getMain()->getServer()->getScheduler()->scheduleAsyncTask(new HormoneCleaner($this));
+	}
 }

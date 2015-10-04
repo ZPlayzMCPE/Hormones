@@ -24,6 +24,7 @@ use Phar;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
+use pocketmine_utils\Utils;
 use RuntimeException;
 use shoghicp\FastTransfer\FastTransfer;
 use WeakRef;
@@ -57,22 +58,35 @@ class HormonesPlugin extends PluginBase{
 	/**
 	 * @internal
 	 */
-	public function onLoad(){
-		if(!is_file($this->getDataFolder() . "config.yml")){
-			$this->getLogger()->warning("You are strongly recommended to run the phar file " . Phar::running(false) . " to configure Hormones.");
-			$this->getLogger()->warning("You can do so by running this in your COMMAND TERMINAL (not the PocketMine console!): `" . PHP_BINARY . " " . Phar::running(false) . "`");
-		}
-	}
-	/**
-	 * @internal
-	 */
 	public function onEnable(){
+		if(!is_file($this->getDataFolder() . "config.yml")){
+			$me = Phar::running(false);
+			$this->getLogger()->critical("Please run the phar file $me to configure Hormones.");
+			$os = Utils::getOS();
+			$binary = PHP_BINARY;
+			$basename = basename($me);
+			if($os === "win"){
+				file_put_contents($file = realpath(dirname(Phar::running(false)) . "/HormonesInstaller.cmd"), <<<EOF
+@echo off
+$binary $basename
+EOF
+				);
+				$this->getLogger()->alert("Please open the file $file to configure Hormones, or simply run this on Windows command terminal: \r\n$binary $basename");
+			}else{
+				file_put_contents($file = realpath(dirname(Phar::running(false)) . "/HormonesInstaller.sh"), <<<EOF
+#!/bin/bash
+$binary $basename
+EOF
+				);
+				$this->getLogger()->alert("Please run the file $file to configure Hormones, or simply run this command line:\n$binary $basename");
+			}
+			throw new RuntimeException("Startup not configured");
+		}
 		$this->fastTransfer = $this->getServer()->getPluginManager()->getPlugin("FastTransfer");
 		if(!($this->fastTransfer instanceof FastTransfer)){
 			throw new \UnexpectedValueException("FastTransfer plugin is invalid");
 		}
 		$this->getLogger()->debug("Loading config...");
-		$this->saveDefaultConfig();
 		$this->mysqlDetails = $this->getConfig()->get("mysql", [
 			"hostname" => "127.0.0.1",
 			"username" => "root",

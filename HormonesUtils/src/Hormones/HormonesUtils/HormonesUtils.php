@@ -15,8 +15,19 @@
 
 namespace Hormones\HormonesUtils;
 
+use Hormones\HormonesPlugin;
 use pocketmine\plugin\PluginBase;
 
 class HormonesUtils extends PluginBase{
-
+	/** @var HormonesPlugin */
+	private $hormones;
+	public function onEnable(){
+		$this->hormones = $this->getServer()->getPluginManager()->getPlugin("Hormones");
+	}
+	/**
+	 * @return HormonesPlugin
+	 */
+	public function getHormones() : HormonesPlugin{
+		return $this->hormones;
+	}
 }

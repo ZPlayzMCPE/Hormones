@@ -1,5 +1,18 @@
 <?php
 
+/*
+ * Hormone
+ *
+ * Copyright (C) 2015 PEMapModder and contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * @author PEMapModder
+ */
+
 namespace {
 
 	use pocketmine_utils\Config;
@@ -109,7 +122,29 @@ namespace {
 			"maxPlayers" => $maxPlayers
 		]
 	], YAML_UTF8_ENCODING);
-	echo "\r[X] Exporting config file... OK.", PHP_EOL, "[*] Your server ID is $serverID", PHP_EOL, "[X] Task completed.", PHP_EOL;
+	echo "\r[X] Exporting config file... OK.", PHP_EOL, "[*] Your server ID is $serverID", PHP_EOL;
+
+	$dir = dirname(\Phar::running(false));
+	foreach(new \RegexIterator(new \DirectoryIterator($dir), '/\.phar/i') as $file){
+		$phar = new Phar($file);
+		if(isset($phar["plugin.yml"])){
+			$manifest = $phar["plugin.yml"];
+			if($manifest instanceof \PharFileInfo){
+				$data = yaml_parse($manifest->getContent());
+				if(isset($data["name"]) and $data["name"] === "FastTransfer"){
+					$found = true;
+					break;
+				}
+			}
+		}
+	}
+	if(!isset($found)){
+		echo "[*] Dependency plugin FastTransfer not found. Installing...";
+		$ft = Utils::getURL("https://forums.pocketmine.net/plugins/fasttransfer.1142/download?version=2288");
+		file_put_contents($dir . "/FastTransfer.phar", $ft);
+		echo "\r[X] Dependency plugin FastTransfer not found. Installing... Done!", PHP_EOL;
+	}
+	echo "[X] Completed installation of Hormones.", PHP_EOL;
 }
 
 namespace pocketmine_utils {
