@@ -40,7 +40,7 @@ $phar->startBuffering();
 $phar->buildFromDirectory($dir);
 $phar->addFromString("build.info", json_encode([
 	"timestamp" => time(),
-	"hash" => $hash,
+		"checksum" => $hash,
 ]));
 $phar->stopBuffering();
 echo "Hormones build created at " . realpath($mainPath), PHP_EOL;
@@ -53,11 +53,11 @@ $phar->startBuffering();
 $phar->buildFromDirectory($dir);
 $phar->addFromString("build.info", json_encode([
 	"timestamp" => time(),
-	"hash" => $hash,
+		"checksum" => $hash,
 ]));
 $phar->stopBuffering();
 echo "HormonesUtils build created at " . realpath($utilsPath), PHP_EOL;
 
-echo "Hash: ", $hash, PHP_EOL;
+echo "Checksum: ", $hash, PHP_EOL;
 
 exec("git add -A", $output);

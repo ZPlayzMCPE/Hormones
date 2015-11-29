@@ -33,7 +33,7 @@ class HormonesPlugin extends PluginBase{
 	const HORMONES_DB = "hormones.db";
 
 	/** @var FastTransfer */
-	private $fastTransfer;
+	private $transferIntegration;
 	/** @var string[]|Hormone[] */
 	private $hormoneTypes = [];
 	/** @var array */
@@ -82,8 +82,8 @@ EOF
 			}
 			throw new RuntimeException("Startup not configured");
 		}
-		$this->fastTransfer = $this->getServer()->getPluginManager()->getPlugin("FastTransfer");
-		if(!($this->fastTransfer instanceof FastTransfer)){
+		$this->transferIntegration = $this->getServer()->getPluginManager()->getPlugin("FastTransfer");
+		if(!($this->transferIntegration instanceof FastTransfer)){
 			throw new \UnexpectedValueException("FastTransfer plugin is invalid");
 		}
 		$this->getLogger()->debug("Loading config...");
@@ -272,7 +272,7 @@ EOF
 	}
 
 	public function transferPlayer(Player $player, string $ip, int $port, string $msg){
-		$this->fastTransfer->transferPlayer($player, $ip, $port, $msg);
+		$this->transferIntegration->transferPlayer($player, $ip, $port, $msg);
 	}
 	/**
 	 * WARNING: Do NOT use the $weak option until PocketMine is shipped with a stable version of WeakRef with PHP 7!
