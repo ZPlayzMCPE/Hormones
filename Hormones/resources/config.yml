@@ -1,11 +1,32 @@
 ---
+Dear User: Please delete this line after you have finished setting up the config file.
+
+# MySQL database setup
+# You must use the same database and schema for all your plugins.
+# The user used for hormones should have access to LOCK, CREATE, SELECT, INSERT, UPDATE and DELETE all tables in the schema.
 mysql:
-  hostname: 127.0.0.1
+  host: 127.0.0.1
   username: root
   password: ""
   schema: hormones
   port: 3306
+  socket: ""
+
+# Localized information for this server
 localize:
-  organ: 0
-  maxPlayers: 20
+  organ: normal # The type name of the server. Can be anything you want. Players may be transferred to other servers of the same oragn if server full. Case-insensitive.
+  name: auto # set a unique name for this server, merely for displaying to you. Writing "auto" will be replaced by the server IP + port.
+  address: auto # replace this with a DNS address that points to this server. Otherwise this will be replaced by an automatically detected external IP.
+                # "address: auto" may not work if an IPv6 address is reported by online services.
+
+# The kidney cleans old hormones.
+# Since hormones are only used as a temporary medium of communication among servers in your network,
+# the kidney should be operated regularly to prevent the database from storing a large amount of unneeded data.
+# You may only want to disable the kidney for debug purposes.
+# You might only need to enable kidney in any one of the servers in your network, but it doesn't hurt to enable in all.
+# Enabling the kidney on all servers should not have notable negative impact on server performance.
+kidney:
+  enabled: true # whether to enable the kidney.
+  interval: 600 # frequency to delete old hormones, in seconds
+  expiry: 300 # number of seconds that hormones should stay in blood before being deleted
 ...

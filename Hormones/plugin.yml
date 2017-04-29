@@ -1,10 +1,7 @@
----
 name: Hormones
-version: 1.0.0-SNAPSHOT
-api: [2.0.0]
+version: 2.0.0
+api: [3.0.0-alpha5]
 main: Hormones\HormonesPlugin
-description: An advanced plugin designed for networks with multiple servers (mainly API) with load balancing support
-#softdepend: [SimpleAuth]
-author: LegendsOfMCPE Team
-authors: [PEMapModder]
-...
+authors:
+- SOFe
+
