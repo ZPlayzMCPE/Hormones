@@ -9,9 +9,9 @@ CREATE TABLE IF NOT EXISTS hormones_organs (
 	name VARCHAR(64) UNIQUE
 );
 DELIMITER $$
-CREATE TRIGGER organ_flag_limit BEFORE INSERT ON hormones_oragns FOR EACH ROW
+CREATE TRIGGER organs_organId_limit BEFORE INSERT ON hormones_organs FOR EACH ROW
 BEGIN
-	IF NEW.flag < 0 OR NEW.flag > 63
+	IF NEW.organId < 0 OR NEW.organId > 63
 	THEN
 		SIGNAL SQLSTATE '45000'
 			SET MESSAGE_TEXT = 'organ flag';
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS hormones_blood (
 
 CREATE TABLE IF NOT EXISTS hormones_tissues (
 	tissueId CHAR(32) PRIMARY KEY,
-	organId TINYINT NOT NULL,
+	organId TINYINT UNSIGNED NOT NULL,
 	lastOnline TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	usedSlots SMALLINT UNSIGNED,
 	maxSlots SMALLINT UNSIGNED,
@@ -40,6 +40,6 @@ CREATE TABLE IF NOT EXISTS hormones_tissues (
 	hormonesVersion SMALLINT,
 	displayName VARCHAR(100),
 	processId SMALLINT UNSIGNED,
-	FOREIGN KEY (organId) REFERENCES hormones_oragns(organId) ON UPDATE CASCADE ON DELETE RESTRICT
+	FOREIGN KEY (organId) REFERENCES hormones_organs(organId) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 -- tissueId = server unique ID

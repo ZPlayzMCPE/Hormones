@@ -29,4 +29,14 @@ kidney:
   enabled: true # whether to enable the kidney.
   interval: 600 # frequency to delete old hormones, in seconds
   expiry: 300 # number of seconds that hormones should stay in blood before being deleted
+
+balancer:
+  # This will only prevent transferring players to other tissues. Other tissues of the same organ ID may still transfer players to this tissue.
+  enabled: true
+  # Normal number of slots. Special players can bypass this limit but are still limited by the max-players in server.properties
+  # If the soft limit is reached, normal players will be transferred to another server with the most empty slots.
+  playerSoftLimit: 18
+  # List of players (usernames, case-insensitive) who can bypass the soft limit.
+  exemptPlayers:
+  - shogchips
 ...

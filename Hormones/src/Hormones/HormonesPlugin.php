@@ -15,8 +15,11 @@
 
 namespace Hormones;
 
+use Hormones\Balancer\BalancerModule;
 use Hormones\Hormone\Artery;
 use Hormones\Hormone\Kidney;
+use Hormones\Lymph\LymphResult;
+use Hormones\Lymph\LymphVessel;
 use libasynql\MysqlCredentials;
 use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
@@ -35,6 +38,12 @@ class HormonesPlugin extends PluginBase{
 	private $visibleAddress;
 	/** @var string */
 	private $displayName;
+
+	private $lymphResult;
+
+	/** @var BalancerModule */
+	private $balancer;
+	private $softSlotsLimit;
 
 	public function onEnable(){
 		$this->saveDefaultConfig();
@@ -66,9 +75,12 @@ class HormonesPlugin extends PluginBase{
 		$this->getServer()->getScheduler()->scheduleAsyncTask(new LymphVessel($cred, $this));
 		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, $lastHormoneId, $organId));
 		Kidney::init($this);
+
+		$this->balancer = new BalancerModule($this);
 	}
 
-	public static function getInstance(Server $server){
+	public static function getInstance(Server $server) : HormonesPlugin{
+		/** @noinspection PhpIncompatibleReturnTypeInspection */
 		return $server->getPluginManager()->getPlugin("Hormones");
 	}
 
@@ -95,6 +107,19 @@ class HormonesPlugin extends PluginBase{
 
 	public function getCredentials() : MysqlCredentials{
 		return $this->credentials;
+	}
+
+	public function getSoftSlotsLimit() : int{
+		return $this->softSlotsLimit ?? ($this->softSlotsLimit =
+				$this->getConfig()->getNested("playerSoftLimit", $this->getServer()->getMaxPlayers() - 2));
+	}
+
+	public function getLymphResult() : LymphResult{
+		return $this->lymphResult;
+	}
+
+	public function setLymphResult(LymphResult $lymphResult){
+		$this->lymphResult = $lymphResult;
 	}
 
 	public static function setNthBitSmallEndian(int $n, int $bytes){
