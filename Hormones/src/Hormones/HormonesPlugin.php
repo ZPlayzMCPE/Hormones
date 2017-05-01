@@ -15,11 +15,13 @@
 
 namespace Hormones;
 
-use Hormones\Balancer\BalancerModule;
 use Hormones\Hormone\Artery;
 use Hormones\Hormone\Kidney;
 use Hormones\Lymph\LymphResult;
 use Hormones\Lymph\LymphVessel;
+use Hormones\Utils\Balancer\BalancerModule;
+use Hormones\Utils\Moderation\ModerationModule;
+use Hormones\Utils\SingleSession\SingleSessionModule;
 use libasynql\MysqlCredentials;
 use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
@@ -42,8 +44,12 @@ class HormonesPlugin extends PluginBase{
 	private $lymphResult;
 
 	/** @var BalancerModule */
-	private $balancer;
+	private $balancerModule;
 	private $softSlotsLimit;
+
+	private $moderationModule;
+
+	private $singleSessionModule;
 
 	public function onEnable(){
 		$this->saveDefaultConfig();
@@ -76,7 +82,11 @@ class HormonesPlugin extends PluginBase{
 		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, $lastHormoneId, $organId));
 		Kidney::init($this);
 
-		$this->balancer = new BalancerModule($this);
+		$this->balancerModule = new BalancerModule($this);
+
+		$this->moderationModule = new ModerationModule($this);
+
+		$this->singleSessionModule = new SingleSessionModule($this);
 	}
 
 	public static function getInstance(Server $server) : HormonesPlugin{
@@ -89,7 +99,7 @@ class HormonesPlugin extends PluginBase{
 			$this->getConfig()->getNested("localize.name", "auto"));
 	}
 
-	public function getServerId(){
+	public function getTissueId(){
 		return $this->serverId;
 	}
 
@@ -121,6 +131,20 @@ class HormonesPlugin extends PluginBase{
 	public function setLymphResult(LymphResult $lymphResult){
 		$this->lymphResult = $lymphResult;
 	}
+
+
+	public function getBalancerModule() : BalancerModule{
+		return $this->balancerModule;
+	}
+
+	public function getModerationModule() : ModerationModule{
+		return $this->moderationModule;
+	}
+
+	public function getSingleSessionModule() : SingleSessionModule{
+		return $this->singleSessionModule;
+	}
+
 
 	public static function setNthBitSmallEndian(int $n, int $bytes){
 		$offset = $n >> 3;

@@ -27,15 +27,51 @@ abstract class Hormone{
 	/** @var string [64] a 64-bit byte-array bitmask */
 	private $receptors; // I wanted to make this an int, but then I considered it won't work on 32-bit systems
 	private $creationTime;
+	private $expiryTime;
+
+	/**
+	 * Only to be called from Artery.php
+	 *
+	 * @param HormonesPlugin $plugin
+	 * @param array          $row
+	 */
+	public static function handleRow(HormonesPlugin $plugin, array $row){
+		if(isset(self::$knownTypes[$row["type"]])){
+			$class = self::$knownTypes[$row["type"]];
+			$hormone = new $class($row["receptors"]);
+			$args = [$plugin];
+		}else{
+			$event = new UnknownHormoneEvent($plugin, $row["type"], $row["receptors"]);
+			$plugin->getServer()->getPluginManager()->callEvent($event);
+			$hormone = $event->getHormone();
+			if($hormone === null){
+				$plugin->getLogger()->error("Received hormone of unknown type: " . $row["type"]);
+				return;
+			}
+			$args = $event->getRespondArgs();
+		}
+		/** @var Hormone $hormone */
+		$hormone->hormoneId = $row["hormoneId"];
+		$hormone->creationTime = $row["creationTime"];
+		$hormone->expiryTime = $row["expiryTime"];
+		$hormone->setData(json_decode($row["json"], true));
+		$hormone->respond($args);
+	}
+
+	public function release(HormonesPlugin $plugin){
+		$plugin->getServer()->getScheduler()->scheduleAsyncTask(new Vein($plugin->getCredentials(), $this));
+	}
 
 	/**
 	 * Internal constructor. Subclasses MUST call this method.
 	 *
 	 * @param string|null $receptors the bitmask for oragns to handle this hormone
+	 * @param int         $lifetime  number of seconds that this hormone should persist.
 	 */
-	protected function __construct(string $receptors = null){
+	public function __construct(string $receptors = null, int $lifetime = 0){
 		$this->receptors = $receptors ?? str_repeat("\xFF", 8);
 		$this->creationTime = time();
+		$this->expiryTime = $this->creationTime + $lifetime;
 	}
 
 	protected function enableAllOrgans(){
@@ -54,36 +90,6 @@ abstract class Hormone{
 		$this->receptors &= ~HormonesPlugin::setNthBitSmallEndian($organId, 8);
 	}
 
-	/**
-	 * Only to be called from Artery.php
-	 *
-	 * @param HormonesPlugin $plugin
-	 * @param array          $row
-	 */
-	public static function handleRow(HormonesPlugin $plugin, array $row){
-		if(isset(self::$knownTypes[$row["type"]])){
-			$class = self::$knownTypes[$row["type"]];
-		}else{
-			$event = new UnknownHormoneEvent($plugin, $row["type"]);
-			$plugin->getServer()->getPluginManager()->callEvent($event);
-			$class = $event->getClass();
-			if($class === null){
-				$plugin->getLogger()->error("Received hormone of unknown type: " . $row["type"]);
-				return;
-			}
-		}
-		/** @var Hormone $hormone */
-		$hormone = new $class($row["receptors"]);
-		$hormone->hormoneId = $row["hormoneId"];
-		$hormone->creationTime = $row["creationTime"];
-		$hormone->setData(json_decode($row["json"], true));
-		$hormone->respond();
-	}
-
-	public function release(HormonesPlugin $plugin){
-		$plugin->getServer()->getScheduler()->scheduleAsyncTask(new Vein($plugin->getCredentials(), $this));
-	}
-
 	public abstract function getType() : string;
 
 	public function getReceptors() : string{
@@ -94,11 +100,31 @@ abstract class Hormone{
 		return $this->creationTime;
 	}
 
+	public function getExpiryTime() : int{
+		return $this->expiryTime;
+	}
+
+	public function setExpiryTime(int $expiryTime){
+		$this->expiryTime = $expiryTime;
+	}
+
+	public function setLifeTime(int $lifeTime){
+		$this->expiryTime = $this->creationTime + $lifeTime;
+	}
+
+	public function getLifeTime() : int{
+		return $this->expiryTime - $this->creationTime;
+	}
+
 	public abstract function getData() : array;
 
-	public abstract function setData(array $data);
+	public function setData(array $data){
+		foreach($data as $k => $v){
+			$this->{$k} = $v;
+		}
+	}
 
-	public abstract function respond();
+	public abstract function respond(array $args);
 
 	/**
 	 * This should only be called from LymphVessel.php

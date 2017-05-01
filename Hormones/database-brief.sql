@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS hormones_blood (
 	type VARCHAR(64) NOT NULL,
 	receptors BIT(64) DEFAULT x'FFFFFFFFFFFFFFFF',
 	creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	expiry TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	json TEXT
 );
 -- type: the hormone type, in the format "namespace.hormoneName", e.g. "hormones.moderation.Mute"
@@ -43,3 +44,13 @@ CREATE TABLE IF NOT EXISTS hormones_tissues (
 	FOREIGN KEY (organId) REFERENCES hormones_organs(organId) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 -- tissueId = server unique ID
+
+CREATE TABLE IF NOT EXISTS hormones_mod_banlist (
+	name VARCHAR(20) PRIMARY KEY,
+	start TIMESTAMP NOT NULL,
+	stop TIMESTAMP DEFAULT NULL,
+	message VARCHAR(512) DEFAULT '',
+	organs BIT(64) DEFAULT x'FFFFFFFFFFFFFFFF',
+	doer VARCHAR(20)
+);
+

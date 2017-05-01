@@ -37,6 +37,6 @@ class Kidney extends PluginTask{
 		/** @var HormonesPlugin $plugin */
 		$plugin = $this->getOwner();
 		$plugin->getServer()->getScheduler()->scheduleAsyncTask(new DirectQueryMysqlTask($plugin->getCredentials(),
-			"DELETE FROM hormones_blood WHERE UNIX_TIMESTAMP(creation) < UNIX_TIMESTAMP() - ?", [["i", $this->expiry]]));
+			"DELETE FROM hormones_blood WHERE UNIX_TIMESTAMP(expiry) < UNIX_TIMESTAMP() - ?", [["i", $this->expiry]]));
 	}
 }

@@ -15,6 +15,7 @@
 
 namespace Hormones\Event;
 
+use Hormones\Hormone\Hormone;
 use Hormones\HormonesPlugin;
 
 /**
@@ -23,8 +24,15 @@ use Hormones\HormonesPlugin;
 class UnknownHormoneEvent extends HormonesEvent{
 	public static $handlerList = null;
 
+	/** @var string */
 	private $type;
-	private $class = null;
+	/** @var string */
+	private $receptors;
+	/** @var Hormone|null */
+	private $hormone = null;
+
+	/** @var mixed[] */
+	private $respondArgs;
 
 	public function __construct(HormonesPlugin $plugin, string $type){
 		parent::__construct($plugin);
@@ -35,11 +43,23 @@ class UnknownHormoneEvent extends HormonesEvent{
 		return $this->type;
 	}
 
-	public function getClass(){
-		return $this->class;
+	public function getReceptors() : string{
+		return $this->receptors;
 	}
 
-	public function setClass(string $class){
-		$this->class = $class;
+	public function getHormone(){
+		return $this->hormone;
+	}
+
+	public function setHormone(Hormone $hormone){
+		$this->hormone = $hormone;
+	}
+
+	public function getRespondArgs() : array{
+		return $this->respondArgs;
+	}
+
+	public function setRespondArgs(array $respondArgs){
+		$this->respondArgs = $respondArgs;
 	}
 }

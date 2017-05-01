@@ -37,7 +37,7 @@ class LymphVessel extends QueryMysqlTask{
 
 	public function __construct(MysqlCredentials $credentials, HormonesPlugin $plugin){
 		parent::__construct($credentials);
-		$this->serverId = $plugin->getServerId();
+		$this->serverId = $plugin->getTissueId();
 		$this->organId = $plugin->getOrganId();
 		$this->usedSlots = count($plugin->getServer()->getOnlinePlayers());
 		$this->maxSlots = $plugin->getSoftSlotsLimit();
@@ -45,7 +45,7 @@ class LymphVessel extends QueryMysqlTask{
 		$this->port = $plugin->getServer()->getPort();
 		$this->hormonesVersion = HormonesPlugin::DATABASE_VERSION;
 		$this->displayName = $plugin->getDisplayName();
-		$this->processId = getmypid();
+		$this->processId = getmypid(); // make sure this is called from the main thread
 	}
 
 	protected function execute(){
@@ -83,9 +83,9 @@ class LymphVessel extends QueryMysqlTask{
 			$lr->onlineSlots = $row["online"];
 			$lr->totalSlots = $row["total"];
 			$lr->altServer = $altServer = new AltServerObject();
-			$altServer->address=$row["ip"];
-			$altServer->port=$row["port"];
-			$altServer->displayName=$row["displayName"];
+			$altServer->address = $row["ip"];
+			$altServer->port = $row["port"];
+			$altServer->displayName = $row["displayName"];
 
 			$this->setResult($lr);
 		}elseif($result instanceof MysqlErrorResult){

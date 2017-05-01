@@ -39,4 +39,21 @@ balancer:
   # List of players (usernames, case-insensitive) who can bypass the soft limit.
   exemptPlayers:
   - shogchips
+
+# Ensures that no two logged-in players on the network will have the same name at the same moment
+singleSession:
+  # Action to do if there is collision. Possible values:
+  #     off: Disable singleSession
+  #     bump: Disallow login if a player of such name is already logged in in the network (in any organs, any tissues)
+  #     push: Kick any other players if the condition in singleSession.pushUpon is met
+  #     ip-push: push if both players have the same IP, bump if different IP
+
+  # IMPORTANT: Make sure you use the same setttings on all network servers.
+  mode: off
+
+  # The auth plugin integration to use
+  # This will be used to detect whether a player is online and logged in.
+  # Possible values: none, SimpleAuth, ServerAuth, HereAuth, PiggyAuth
+  # If "none" is chosen, player is considered "logged in" as long as the player is connected and remains online (even before being spawned)
+  authIntegration: none
 ...

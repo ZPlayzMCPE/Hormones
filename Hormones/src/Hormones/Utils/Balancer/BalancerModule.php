@@ -13,10 +13,10 @@
  *
 */
 
-namespace Hormones\Balancer;
+namespace Hormones\Utils\Balancer;
 
-use Hormones\Balancer\Event\PlayerBalancedEvent;
 use Hormones\HormonesPlugin;
+use Hormones\Utils\Balancer\Event\PlayerBalancedEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerPreLoginEvent;
 

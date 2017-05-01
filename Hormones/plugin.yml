@@ -4,4 +4,8 @@ api: [3.0.0-alpha5]
 main: Hormones\HormonesPlugin
 authors:
 - SOFe
-
+softdepend:
+- SimpleAuth
+- ServerAuth
+- HereAuth
+- PiggyAuth

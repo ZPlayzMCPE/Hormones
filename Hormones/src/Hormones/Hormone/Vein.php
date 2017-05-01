@@ -32,6 +32,7 @@ class Vein extends QueryMysqlTask{
 			"type" => $hormone->getType(),
 			"receptors" => bin2hex($hormone->getReceptors()),
 			"creationTime" => $hormone->getCreationTime(),
+			"expiryTime" => $hormone->getCreationTime(),
 			"data" => $hormone->getData()
 		]);
 	}
@@ -40,10 +41,11 @@ class Vein extends QueryMysqlTask{
 		$hormone = unserialize($this->hormone);
 
 		$this->setResult(MysqlResult::executeQuery($this->getMysqli(), "INSERT INTO hormones_blood 
-				(type, receptors, creation, json) VALUES (?, ?, FROM_UNIXTIME(?), ?)", [
+				(type, receptors, creation, expiry, json) VALUES (?, ?, FROM_UNIXTIME(?), FROM_UNIXTIME(?), ?)", [
 			["s" => $hormone["type"]],
 			["s" => $hormone["receptors"]],
 			["i" => $hormone["creationTime"]],
+			["i" => $hormone["expiryTime"]],
 			["s" => $hormone["data"]]
 		]));
 	}

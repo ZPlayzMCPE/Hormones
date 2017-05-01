@@ -13,7 +13,7 @@
  *
 */
 
-namespace Hormones\Balancer\Event;
+namespace Hormones\Utils\Balancer\Event;
 
 use Hormones\Event\HormonesEvent;
 use Hormones\HormonesPlugin;
