@@ -5,6 +5,7 @@ projects:
     stub: stubs/entry.php
     includeDirs:
       stubs: =
+    includeFiles:
       /phagocyte.php: stubs/phagocyte.php
     libs:
       - src: poggit/libasynql/libasynql
