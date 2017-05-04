@@ -20,6 +20,7 @@ permissions:
         children:
           hormones.moderation.moderator:
             default: false
+            children:
               hormones.moderation.moderator.sectional:
                 default: op
                 children:
