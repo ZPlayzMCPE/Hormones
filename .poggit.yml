@@ -4,7 +4,7 @@ projects:
     path: Hormones/
     stub: stubs/entry.php
     includeDirs:
-      stubs: ~
+      stubs: =
       /phagocyte.php: stubs/phagocyte.php
     libs:
       - src: poggit/libasynql/libasynql
