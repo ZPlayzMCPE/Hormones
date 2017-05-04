@@ -35,10 +35,18 @@ class Artery extends QueryMysqlTask{
 
 	protected function execute(){
 		$bitmask = str_repeat("\0", 8);
+		if($this->hormonesAfter !== -1){
+			$after = "hormoneId > ?";
+			$args = [["i", $this->hormonesAfter], ["s", $bitmask]];
+		}else{
+			$after = "expiryTime > UNIX_TIMESTAMP()";
+			$args = [["s", $bitmask]];
+		}
+
 		$this->setResult(MysqlResult::executeQuery($this->getMysqli(), "SELECT
 				hormoneId, type, receptors, UNIX_TIMESTAMP(creation) creationTime, UNIX_TIMESTAMP(expiry) expiryTime, json
-				FROM hormones_blood WHERE hormoneId > ? AND (receptors & ?) > 0",
-			[["i", $this->hormonesAfter], ["s", $bitmask]]));
+				FROM hormones_blood WHERE $after AND (receptors & ?) > 0",
+			$args));
 	}
 
 	public function onCompletion(Server $server){

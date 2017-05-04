@@ -98,7 +98,7 @@ class SingleSessionModule implements Listener{
 	 */
 	public function e_onLogin(PlayerLoginEvent $event){
 		$hormone = new NotifyJoinHormone();
-		$hormone->username=$event->getPlayer()->getName();
+		$hormone->username = $event->getPlayer()->getName();
 	}
 
 	public function getPlugin() : HormonesPlugin{

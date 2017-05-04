@@ -1,6 +1,7 @@
 name: Hormones
 version: 2.0.0
-api: [3.0.0-alpha5]
+api:
+- 3.0.0-alpha5
 main: Hormones\HormonesPlugin
 authors:
 - SOFe
@@ -9,3 +10,31 @@ softdepend:
 - ServerAuth
 - HereAuth
 - PiggyAuth
+
+permissions:
+  hormones:
+    default: false
+    children:
+      hormones.moderation:
+        default: false
+        children:
+          hormones.moderation.moderator:
+            default: false
+              hormones.moderation.moderator.sectional:
+                default: op
+                children:
+                  hormones.moderation.moderator.sectional.ban:
+                    default: op
+                  hormones.moderation.moderator.sectional.mute:
+                    default: op
+                  hormones.moderation.moderator.sectional.broadcast:
+                    default: op
+              hormones.moderation.moderator.global:
+                default: false
+                children:
+                  hormones.moderation.moderator.global.ban:
+                    default: false
+                  hormones.moderation.moderator.global.mute:
+                    default: false
+                  hormones.moderation.moderator.global.broadcast:
+                    default: false

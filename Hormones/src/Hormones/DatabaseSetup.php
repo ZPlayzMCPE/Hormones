@@ -27,10 +27,9 @@ class DatabaseSetup{
 	 * @param MysqlCredentials $cred
 	 * @param HormonesPlugin   $plugin
 	 * @param int              &$organId
-	 * @param int              &$lastHormoneId
 	 * @return bool
 	 */
-	public static function setupDatabase(MysqlCredentials $cred, HormonesPlugin $plugin, &$organId, &$lastHormoneId) : bool{
+	public static function setupDatabase(MysqlCredentials $cred, HormonesPlugin $plugin, &$organId) : bool{
 		$mysqli = $cred->newMysqli();
 		$mysqli->query("CREATE TABLE IF NOT EXISTS hormones_metadata (name VARCHAR(20) PRIMARY KEY, val VARCHAR(20))");
 
@@ -70,11 +69,6 @@ class DatabaseSetup{
 		}
 
 		$mysqli->query("UNLOCK TABLES");
-
-		$result = MysqlResult::executeQuery($mysqli, "SELECT MAX(hormoneId) mhid FROM hormones_blood", []);
-		if($result instanceof MysqlSelectResult){
-			$lastHormoneId = (int) $result->rows[0]["mhid"];
-		}
 
 		return true;
 	}

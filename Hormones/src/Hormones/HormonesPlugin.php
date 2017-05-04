@@ -35,6 +35,8 @@ class HormonesPlugin extends PluginBase{
 	/** @var int */
 	private $organId;
 	/** @var string */
+	private $organName;
+	/** @var string */
 	private $serverId;
 	/** @var string */
 	private $visibleAddress;
@@ -64,9 +66,10 @@ class HormonesPlugin extends PluginBase{
 		}
 
 		$this->credentials = $cred = MysqlCredentials::fromArray($this->getConfig()->get("mysql"));
-		if(!DatabaseSetup::setupDatabase($cred, $this, $organId, $lastHormoneId)){
+		if(!DatabaseSetup::setupDatabase($cred, $this, $organId)){
 			return;
 		}
+		$this->organName = $this->getConfig()->getNested("localize.organ");
 		$this->organId = $organId;
 		$this->serverId = $this->calcServerId();
 		$this->visibleAddress = $this->getConfig()->getNested("localize.address", "auto");
@@ -79,7 +82,7 @@ class HormonesPlugin extends PluginBase{
 		}
 
 		$this->getServer()->getScheduler()->scheduleAsyncTask(new LymphVessel($cred, $this));
-		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, $lastHormoneId, $organId));
+		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, -1, $organId));
 		Kidney::init($this);
 
 		$this->balancerModule = new BalancerModule($this);
@@ -101,6 +104,10 @@ class HormonesPlugin extends PluginBase{
 
 	public function getTissueId(){
 		return $this->serverId;
+	}
+
+	public function getOrganName() : string{
+		return $this->organName;
 	}
 
 	public function getOrganId() : int{

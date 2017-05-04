@@ -25,9 +25,9 @@ abstract class Hormone{
 
 	private $hormoneId;
 	/** @var string [64] a 64-bit byte-array bitmask */
-	private $receptors; // I wanted to make this an int, but then I considered it won't work on 32-bit systems
-	private $creationTime;
-	private $expiryTime;
+	private $hormoneReceptors; // I wanted to make this an int, but then I considered it won't work on 32-bit systems
+	private $hormoneCreationTime;
+	private $hormoneExpiryTime;
 
 	/**
 	 * Only to be called from Artery.php
@@ -52,8 +52,8 @@ abstract class Hormone{
 		}
 		/** @var Hormone $hormone */
 		$hormone->hormoneId = $row["hormoneId"];
-		$hormone->creationTime = $row["creationTime"];
-		$hormone->expiryTime = $row["expiryTime"];
+		$hormone->hormoneCreationTime = $row["creationTime"];
+		$hormone->hormoneExpiryTime = $row["expiryTime"];
 		$hormone->setData(json_decode($row["json"], true));
 		$hormone->respond($args);
 	}
@@ -69,51 +69,51 @@ abstract class Hormone{
 	 * @param int         $lifetime  number of seconds that this hormone should persist.
 	 */
 	public function __construct(string $receptors = null, int $lifetime = 0){
-		$this->receptors = $receptors ?? str_repeat("\xFF", 8);
-		$this->creationTime = time();
-		$this->expiryTime = $this->creationTime + $lifetime;
+		$this->hormoneReceptors = $receptors ?? str_repeat("\xFF", 8);
+		$this->hormoneCreationTime = time();
+		$this->hormoneExpiryTime = $this->hormoneCreationTime + $lifetime;
 	}
 
 	protected function enableAllOrgans(){
-		$this->receptors = str_repeat("\xFF", 8);
+		$this->hormoneReceptors = str_repeat("\xFF", 8);
 	}
 
 	protected function disableReceptors(){
-		$this->receptors = str_repeat("\0", 8);
+		$this->hormoneReceptors = str_repeat("\0", 8);
 	}
 
 	protected function enableOrgan(int $organId){
-		$this->receptors |= HormonesPlugin::setNthBitSmallEndian($organId, 8);
+		$this->hormoneReceptors |= HormonesPlugin::setNthBitSmallEndian($organId, 8);
 	}
 
 	protected function disableOrgan(int $organId){
-		$this->receptors &= ~HormonesPlugin::setNthBitSmallEndian($organId, 8);
+		$this->hormoneReceptors &= ~HormonesPlugin::setNthBitSmallEndian($organId, 8);
 	}
 
 	public abstract function getType() : string;
 
 	public function getReceptors() : string{
-		return $this->receptors;
+		return $this->hormoneReceptors;
 	}
 
 	public function getCreationTime() : int{
-		return $this->creationTime;
+		return $this->hormoneCreationTime;
 	}
 
 	public function getExpiryTime() : int{
-		return $this->expiryTime;
+		return $this->hormoneExpiryTime;
 	}
 
 	public function setExpiryTime(int $expiryTime){
-		$this->expiryTime = $expiryTime;
+		$this->hormoneExpiryTime = $expiryTime;
 	}
 
 	public function setLifeTime(int $lifeTime){
-		$this->expiryTime = $this->creationTime + $lifeTime;
+		$this->hormoneExpiryTime = $this->hormoneCreationTime + $lifeTime;
 	}
 
 	public function getLifeTime() : int{
-		return $this->expiryTime - $this->creationTime;
+		return $this->hormoneExpiryTime - $this->hormoneCreationTime;
 	}
 
 	public abstract function getData() : array;
