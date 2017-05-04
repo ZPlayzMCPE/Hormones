@@ -14,10 +14,16 @@ mysql:
 
 # Localized information for this server
 localize:
-  organ: normal # The type name of the server. Can be anything you want. Players may be transferred to other servers of the same oragn if server full. Case-insensitive.
-  name: auto # set a unique name for this server, merely for displaying to you. Writing "auto" will be replaced by the server IP + port.
-  address: auto # replace this with a DNS address that points to this server. Otherwise this will be replaced by an automatically detected external IP.
-                # "address: auto" may not work if an IPv6 address is reported by online services.
+  # The type name of the server. Can be anything you want.
+  # If balancer is enabled, players may be transferred to other servers of the same organ (case-insensitive) if server full.
+  # Organ names should only consist of alphabets, numbers and hyphens [A-Za-z0-9-] to fit as command arguments, command names and permission names
+  organ: normal
+  # Set a unique name for this server, merely for displaying to users. Writing "auto" will be replaced by the server IP + port.
+  # If you don't wish to make the server IP so obvious, you may use other
+  name: auto
+  # replace this with a DNS address that points to this server. Otherwise this will be replaced by an automatically detected external IP.
+  # "address: auto" may not work if an IPv6 address is reported by online services.
+  address: auto
 
 # The kidney cleans old hormones.
 # Since hormones are only used as a temporary medium of communication among servers in your network,
@@ -30,6 +36,11 @@ kidney:
   interval: 600 # frequency to delete old hormones, in seconds
   expiry: 300 # number of seconds that hormones should stay in blood before being deleted
 
+# Commands named after the organs that users can use to transfer to the most empty server of that tissue
+# They will have permission nodes
+oragnicTransfer:
+  enabled: true
+
 balancer:
   # This will only prevent transferring players to other tissues. Other tissues of the same organ ID may still transfer players to this tissue.
   enabled: true
@@ -38,7 +49,7 @@ balancer:
   playerSoftLimit: 18
   # List of players (usernames, case-insensitive) who can bypass the soft limit.
   exemptPlayers:
-  - shogchips
+  - Steve
 
 # Ensures that no two logged-in players on the network will have the same name at the same moment
 singleSession:
@@ -56,4 +67,12 @@ singleSession:
   # Possible values: none, SimpleAuth, ServerAuth, HereAuth, PiggyAuth
   # If "none" is chosen, player is considered "logged in" as long as the player is connected and remains online (even before being spawned)
   authIntegration: none
+
+# Allow clients to join this server only if redirected from another server in the network
+transferOnly:
+  # Logically, you have to disable this on at least one server in your network that serves as the "hub".
+  enabled: false
+  # Players logging in from these IP addresses will be exempted from this limit
+  exemptAddresses:
+  - 127.0.0.1
 ...

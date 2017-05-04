@@ -19,7 +19,6 @@ use Hormones\Hormone\Hormone;
 use Hormones\HormonesPlugin;
 
 class StopServerHormone extends Hormone{
-
 	public function getType() : string{
 		return "Hormones.StopServer";
 	}

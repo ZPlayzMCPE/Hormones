@@ -15,6 +15,8 @@
 
 namespace Hormones;
 
+use Hormones\Commands\StopNetworkCommand;
+use Hormones\Commands\SwitchOrganCommand;
 use Hormones\Hormone\Artery;
 use Hormones\Hormone\Kidney;
 use Hormones\Lymph\LymphResult;
@@ -53,6 +55,11 @@ class HormonesPlugin extends PluginBase{
 
 	private $singleSessionModule;
 
+	public static function getInstance(Server $server) : HormonesPlugin{
+		/** @noinspection PhpIncompatibleReturnTypeInspection */
+		return $server->getPluginManager()->getPlugin("Hormones");
+	}
+
 	public function onEnable(){
 		$this->saveDefaultConfig();
 
@@ -84,17 +91,14 @@ class HormonesPlugin extends PluginBase{
 		$this->getServer()->getScheduler()->scheduleAsyncTask(new LymphVessel($cred, $this));
 		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, -1, $organId));
 		Kidney::init($this);
+		if($this->getConfig()->getNested("organicTransfer.enabled", true)){
+			SwitchOrganCommand::registerOrganicStuff($this);
+		}
+		$this->getServer()->getCommandMap()->register("hormones", new StopNetworkCommand($this));
 
 		$this->balancerModule = new BalancerModule($this);
-
 		$this->moderationModule = new ModerationModule($this);
-
 		$this->singleSessionModule = new SingleSessionModule($this);
-	}
-
-	public static function getInstance(Server $server) : HormonesPlugin{
-		/** @noinspection PhpIncompatibleReturnTypeInspection */
-		return $server->getPluginManager()->getPlugin("Hormones");
 	}
 
 	private function calcServerId(){

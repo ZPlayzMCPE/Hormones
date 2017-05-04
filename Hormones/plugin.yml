@@ -14,7 +14,25 @@ softdepend:
 permissions:
   hormones:
     default: false
+    description: Allows full access to Hormones. A very powerful permission.
     children:
+      hormones.transfer:
+        description: Allows transferring to other tissues
+        default: op
+        children:
+          hormones.transfer.organic:
+            description: Allows transferring to a specific organ
+            default: op
+#          hormones.transfer.specific:
+#            description: Allow transferring to a specific tissue
+#            default: true
+      hormones.admin:
+        description: Allows administrative access to the network, i.e. those related to server maintenance.
+        default: false
+        children:
+          hormones.admin.stop:
+            description: Allows triggering shutdown/restart of all network servers.
+            default: false
       hormones.moderation:
         default: false
         children:
