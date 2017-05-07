@@ -24,7 +24,7 @@ class StopServerHormone extends Hormone{
 	}
 
 	public function getData() : array{
-		return[ ];
+		return [];
 	}
 
 	public function respond(array $args){

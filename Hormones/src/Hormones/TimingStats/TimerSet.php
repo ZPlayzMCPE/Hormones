@@ -17,11 +17,13 @@ namespace Hormones\TimingStats;
 
 class TimerSet{
 	/** @var Timer */
-	public $veinUp, $arteryNet, $arteryCycle;
+	public $veinUp, $arteryNet, $arteryCycle, $lymphNet, $lymphCycle;
 
 	public function __construct(){
 		$this->veinUp = new Timer;
 		$this->arteryNet = new Timer;
 		$this->arteryCycle = new Timer;
+		$this->lymphNet = new Timer;
+		$this->lymphCycle = new Timer;
 	}
 }

@@ -33,6 +33,9 @@ permissions:
           hormones.admin.stop:
             description: Allows triggering shutdown/restart of all network servers.
             default: false
+          hormones.admin.status:
+            description: Allows checking Hormones status with /hormones
+            default: true
       hormones.moderation:
         default: false
         children:

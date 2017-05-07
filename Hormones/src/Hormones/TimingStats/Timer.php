@@ -20,7 +20,7 @@ class Timer{
 
 	private $data = [];
 
-	public function __construct(int $threshold = 10){
+	public function __construct(int $threshold = 100){
 		$this->threshold = $threshold;
 	}
 

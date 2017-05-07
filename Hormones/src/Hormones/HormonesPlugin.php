@@ -15,6 +15,7 @@
 
 namespace Hormones;
 
+use Hormones\Commands\HormonesStatusCommand;
 use Hormones\Commands\StopNetworkCommand;
 use Hormones\Commands\SwitchOrganCommand;
 use Hormones\Hormone\Artery;
@@ -106,6 +107,7 @@ class HormonesPlugin extends PluginBase{
 			SwitchOrganCommand::registerOrganicStuff($this);
 		}
 		$this->getServer()->getCommandMap()->register("hormones", new StopNetworkCommand($this));
+		$this->getServer()->getCommandMap()->register("hormones", new HormonesStatusCommand($this));
 
 		$this->timers = new TimerSet;
 
@@ -157,6 +159,22 @@ class HormonesPlugin extends PluginBase{
 		$this->lymphResult = $lymphResult;
 	}
 
+	public function addDiastoleListener(callable $callable){
+		$this->arteryDiastoleHandlers[] = $callable;
+	}
+
+	public function onArteryDiastole(){
+		$handlers = $this->arteryDiastoleHandlers;
+		$this->arteryDiastoleHandlers = [];
+		foreach($handlers as $handler){
+			$handler();
+		}
+	}
+
+	public function getTimers() : TimerSet{
+		return $this->timers;
+	}
+
 
 	public function getBalancerModule() : BalancerModule{
 		return $this->balancerModule;
@@ -180,21 +198,5 @@ class HormonesPlugin extends PluginBase{
 		$byteArray = str_repeat("\0", $bytes);
 		$byteArray{$offset} = chr(1 << ($n & 7));
 		return $byteArray;
-	}
-
-	public function addDiastoleListener(callable $callable){
-		$this->arteryDiastoleHandlers[] = $callable;
-	}
-
-	public function onArteryDiastole(){
-		$handlers = $this->arteryDiastoleHandlers;
-		$this->arteryDiastoleHandlers = [];
-		foreach($handlers as $handler){
-			$handler();
-		}
-	}
-
-	public function getTimers() : TimerSet{
-		return $this->timers;
 	}
 }

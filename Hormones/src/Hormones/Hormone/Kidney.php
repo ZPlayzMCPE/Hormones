@@ -17,6 +17,8 @@ namespace Hormones\Hormone;
 
 use Hormones\HormonesPlugin;
 use libasynql\DirectQueryMysqlTask;
+use libasynql\result\MysqlErrorResult;
+use libasynql\result\MysqlSuccessResult;
 use pocketmine\scheduler\PluginTask;
 
 /**
@@ -37,6 +39,13 @@ class Kidney extends PluginTask{
 		/** @var HormonesPlugin $plugin */
 		$plugin = $this->getOwner();
 		$plugin->getServer()->getScheduler()->scheduleAsyncTask(new DirectQueryMysqlTask($plugin->getCredentials(),
-			"DELETE FROM hormones_blood WHERE UNIX_TIMESTAMP(expiry) < UNIX_TIMESTAMP() - ?", [["i", $this->expiry]]));
+			"DELETE FROM hormones_blood WHERE UNIX_TIMESTAMP(expiry) < UNIX_TIMESTAMP() - ?", [["i", $this->expiry]],
+			function($result) use ($plugin){
+				if($result instanceof MysqlErrorResult){
+					$plugin->getLogger()->logException($result->getException());
+				}elseif($result instanceof MysqlSuccessResult){
+					$plugin->getLogger()->info("[Kidney] Cleaned {$result->affectedRows} expired hormones");
+				}
+			}));
 	}
 }

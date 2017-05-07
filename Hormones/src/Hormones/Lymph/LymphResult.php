@@ -16,6 +16,8 @@
 namespace Hormones\Lymph;
 
 class LymphResult{
+	public $netTime;
+
 	public $tissueCount;
 	public $onlineSlots;
 	public $totalSlots;

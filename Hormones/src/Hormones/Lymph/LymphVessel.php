@@ -35,6 +35,8 @@ class LymphVessel extends QueryMysqlTask{
 	private $displayName;
 	private $processId;
 
+	private $objectCreated;
+
 	public function __construct(MysqlCredentials $credentials, HormonesPlugin $plugin){
 		parent::__construct($credentials);
 		$this->serverId = $plugin->getTissueId();
@@ -46,6 +48,8 @@ class LymphVessel extends QueryMysqlTask{
 		$this->hormonesVersion = HormonesPlugin::DATABASE_VERSION;
 		$this->displayName = $plugin->getDisplayName();
 		$this->processId = getmypid(); // make sure this is called from the main thread
+
+		$this->objectCreated = microtime(true);
 	}
 
 	protected function execute(){
@@ -79,6 +83,7 @@ class LymphVessel extends QueryMysqlTask{
 			]);
 			$row = $result->rows[0];
 			$lr = new LymphResult();
+			$lr->netTime = $result->getTiming();
 			$lr->tissueCount = $row["tissues"];
 			$lr->onlineSlots = $row["online"];
 			$lr->totalSlots = $row["total"];
@@ -103,7 +108,10 @@ class LymphVessel extends QueryMysqlTask{
 				$plugin->getLogger()->logException($result);
 			}elseif($result instanceof LymphResult){
 				$plugin->setLymphResult($result);
+				$plugin->getTimers()->lymphNet->addDatum($result->netTime);
 			}
+
+			$plugin->getTimers()->lymphCycle->addDatum(microtime(true) - $this->objectCreated);
 
 			$server->getScheduler()->scheduleAsyncTask(new LymphVessel($this->getCredentials(), $plugin));
 		}
