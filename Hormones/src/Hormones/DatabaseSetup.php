@@ -16,6 +16,7 @@
 namespace Hormones;
 
 use libasynql\MysqlCredentials;
+use libasynql\PingMysqlTask;
 use libasynql\result\MysqlErrorResult;
 use libasynql\result\MysqlResult;
 use libasynql\result\MysqlSelectResult;
@@ -69,6 +70,8 @@ class DatabaseSetup{
 		}
 
 		$mysqli->query("UNLOCK TABLES");
+
+		PingMysqlTask::init($plugin, $cred);
 
 		return true;
 	}

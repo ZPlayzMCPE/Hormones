@@ -21,9 +21,11 @@ use Hormones\Hormone\Artery;
 use Hormones\Hormone\Kidney;
 use Hormones\Lymph\LymphResult;
 use Hormones\Lymph\LymphVessel;
+use Hormones\TimingStats\TimerSet;
 use Hormones\Utils\Balancer\BalancerModule;
 use Hormones\Utils\Moderation\ModerationModule;
 use Hormones\Utils\SingleSession\SingleSessionModule;
+use Hormones\Utils\TransferOnly\TransferOnlyModule;
 use libasynql\MysqlCredentials;
 use pocketmine\plugin\PluginBase;
 use pocketmine\Server;
@@ -49,11 +51,20 @@ class HormonesPlugin extends PluginBase{
 
 	/** @var BalancerModule */
 	private $balancerModule;
+	/** @var int|null */
 	private $softSlotsLimit;
-
+	/** @var ModerationModule */
 	private $moderationModule;
-
+	/** @var SingleSessionModule */
 	private $singleSessionModule;
+	/** @var TransferOnlyModule */
+	private $transferOnlyModule;
+
+	/** @var callable[] */
+	private $arteryDiastoleHandlers = [];
+
+	/** @var TimerSet */
+	private $timers;
 
 	public static function getInstance(Server $server) : HormonesPlugin{
 		/** @noinspection PhpIncompatibleReturnTypeInspection */
@@ -96,9 +107,12 @@ class HormonesPlugin extends PluginBase{
 		}
 		$this->getServer()->getCommandMap()->register("hormones", new StopNetworkCommand($this));
 
+		$this->timers = new TimerSet;
+
 		$this->balancerModule = new BalancerModule($this);
 		$this->moderationModule = new ModerationModule($this);
 		$this->singleSessionModule = new SingleSessionModule($this);
+		$this->transferOnlyModule = new TransferOnlyModule($this);
 	}
 
 	private function calcServerId(){
@@ -156,11 +170,31 @@ class HormonesPlugin extends PluginBase{
 		return $this->singleSessionModule;
 	}
 
+	public function getTransferOnlyModule() : TransferOnlyModule{
+		return $this->transferOnlyModule;
+	}
+
 
 	public static function setNthBitSmallEndian(int $n, int $bytes){
 		$offset = $n >> 3;
 		$byteArray = str_repeat("\0", $bytes);
 		$byteArray{$offset} = chr(1 << ($n & 7));
 		return $byteArray;
+	}
+
+	public function addDiastoleListener(callable $callable){
+		$this->arteryDiastoleHandlers[] = $callable;
+	}
+
+	public function onArteryDiastole(){
+		$handlers = $this->arteryDiastoleHandlers;
+		$this->arteryDiastoleHandlers = [];
+		foreach($handlers as $handler){
+			$handler();
+		}
+	}
+
+	public function getTimers() : TimerSet{
+		return $this->timers;
 	}
 }

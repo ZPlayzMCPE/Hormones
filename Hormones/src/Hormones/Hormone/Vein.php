@@ -26,8 +26,8 @@ use pocketmine\Server;
 class Vein extends QueryMysqlTask{
 	private $hormone;
 
-	public function __construct(MysqlCredentials $credentials, Hormone $hormone){
-		parent::__construct($credentials, $hormone);
+	public function __construct(MysqlCredentials $credentials, Hormone $hormone, HormonesPlugin $plugin){
+		parent::__construct($credentials, [$hormone, $plugin]);
 		$this->hormone = serialize([
 			"type" => $hormone->getType(),
 			"receptors" => bin2hex($hormone->getReceptors()),
@@ -37,7 +37,7 @@ class Vein extends QueryMysqlTask{
 		]);
 	}
 
-	protected function execute(){
+	public function execute(){
 		$hormone = unserialize($this->hormone);
 
 		$this->setResult(MysqlResult::executeQuery($this->getMysqli(), "INSERT INTO hormones_blood 
@@ -52,13 +52,15 @@ class Vein extends QueryMysqlTask{
 
 	public function onCompletion(Server $server){
 		$result = $this->getResult();
+		/** @var Hormone $hormone */
+		/** @var HormonesPlugin $plugin */
+		list($hormone, $plugin) = $this->fetchLocal($server);
 		if($result instanceof MysqlErrorResult){
 			$plugin = HormonesPlugin::getInstance($server);
 			$plugin->getLogger()->logException($result->getException());
 		}elseif($result instanceof MysqlSuccessResult){
-			/** @var Hormone $hormone */
-			$hormone = $this->fetchLocal($server);
 			$hormone->setHormoneId($result->insertId);
+			$plugin->getTimers()->veinUp->addDatum($result->getTiming());
 		}
 	}
 }

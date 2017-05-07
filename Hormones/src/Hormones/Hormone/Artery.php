@@ -26,11 +26,13 @@ use pocketmine\Server;
 class Artery extends QueryMysqlTask{
 	private $hormonesAfter;
 	private $organId;
+	private $objectCreated;
 
 	public function __construct(MysqlCredentials $credentials, int $hormonesAfter, int $organId){
 		parent::__construct($credentials);
 		$this->hormonesAfter = $hormonesAfter;
 		$this->organId = $organId;
+		$this->objectCreated = microtime(true);
 	}
 
 	protected function execute(){
@@ -72,7 +74,10 @@ class Artery extends QueryMysqlTask{
 				Hormone::handleRow($plugin, $row);
 				$lastHormoneId = $row["hormoneId"];
 			}
+			$plugin->onArteryDiastole();
+			$plugin->getTimers()->arteryNet->addDatum($result->getTiming());
 		}
+		$plugin->getTimers()->arteryCycle->addDatum(microtime(true) - $this->objectCreated);
 		$server->getScheduler()->scheduleAsyncTask(new Artery($this->getCredentials(), $lastHormoneId, $this->organId));
 	}
 }

@@ -36,8 +36,8 @@ abstract class Hormone{
 	 * @param array          $row
 	 */
 	public static function handleRow(HormonesPlugin $plugin, array $row){
-		if(isset(self::$knownTypes[$row["type"]])){
-			$class = self::$knownTypes[$row["type"]];
+		if(isset(Hormone::$knownTypes[$row["type"]])){
+			$class = Hormone::$knownTypes[$row["type"]];
 			$hormone = new $class($row["receptors"]);
 			$args = [$plugin];
 		}else{
@@ -59,7 +59,7 @@ abstract class Hormone{
 	}
 
 	public function release(HormonesPlugin $plugin){
-		$plugin->getServer()->getScheduler()->scheduleAsyncTask(new Vein($plugin->getCredentials(), $this));
+		$plugin->getServer()->getScheduler()->scheduleAsyncTask(new Vein($plugin->getCredentials(), $this, $plugin));
 	}
 
 	/**

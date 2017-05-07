@@ -51,7 +51,7 @@ class PenaltySession{
 		return TextFormat::YELLOW . sprintf(
 				"%s have been %s by %s for %s. You have to wait for %s more before you can chat.",
 				$me ? "You" : ($this->target->name . " @ " . $this->target->ip),
-				self::$PAST_PARTICIPLE[$this->type],
+				PenaltySession::$PAST_PARTICIPLE[$this->type],
 				$this->source,
 				HormonesCommand::ui_secsToPresent($this->till - $this->since),
 				HormonesCommand::ui_secsToPresent($this->till - time()));

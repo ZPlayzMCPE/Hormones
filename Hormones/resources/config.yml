@@ -68,11 +68,58 @@ singleSession:
   # If "none" is chosen, player is considered "logged in" as long as the player is connected and remains online (even before being spawned)
   authIntegration: none
 
-# Allow clients to join this server only if redirected from another server in the network
+# Disallow clients to join this server unless transferred from another server in the network
+## To select an appropriate transferOnly.mode, it is important to understand the transferOnly notification mechanism.
+## Take the situation as "Server A wants to transfer Client to Server B".
+##
+###       +----->-----[Vein]------>------MySQL----->-----[Artery]----->----+
+###       ^                                                                v
+###    Server A                                                        Server B <----------+
+###       v                                                                ^             [Join]
+###       +--->--[TransferPacket]--->---Client----->-----[Login]----->-----+------->-------+
+##
+## Server A sends a signal through [Vein] to MySQL to notify that the client is being transferred to Server B,
+## and Server B downloads the signal through [Artery] from MySQL.
+## Server A sends a [TransferPacket] to Client, then the Client will [Login] in Server B.
+## After a long "Building terrain" screen, the Client will [Join] in Server B.
+##
+## "Vein" is like throwing a ball (the Hormones signal) into a pond.
+## "Artery" is like sinking a bucket into the pond, let the ball flow into it and then pulling out the bucket.
+## Server B automatically repeats the cycle of sinking the bucket and pulling it.
+##
+## If transferOnly.asyncDeclaration is set to false, the server may lag (usually for a very short time, and users won't
+## notice it; check "vein up time" with /hormones command) but ensures that the ball is in the pond before sending the
+## TransferPacket, reducing the chance that the "Client" (lower) pathway happens faster than the "MySQL" (upper) pathway
+## and hence the client getting kicked on Server B.
+## Otherwise, they happen together.
+## You may want to set it to true on servers that have a lot of transfers (e.g. "hub" servers).
+##
+## For transferOnly.mode:
+### off: no need to check for transfers
+### login: check if the ball is in the last few buckets
+### login.sync: same as "login", but if check fails, additionally sink a new bucket, pull it out, and check if the ball
+###             is there. may lag (usually for a very short time, and users won't notice it; check "artery net time"
+###             with /hormones command), but won't lag if the ball is in the automatically pulled buckets before the login.
+### diastole.single: "Diastole" refers to pulling back the bucket. This option will allow all clients to connect and
+###                  start downloading chunks, resource packs, etc., and transfer will be checked immediately when the
+###                  currently sunk bucket is pulled back.
+### diastole.double: Same as diastole.single, except that it is checked in both the first and second pulling-back of the
+###                  bucket.
+### join: same as "login", except that it checks when the player spawns, not when the player just connects.
 transferOnly:
-  # Logically, you have to disable this on at least one server in your network that serves as the "hub".
-  enabled: false
+# Settings for Server A
+  asyncDeclaration: false
+
+# Settings for Server B
+  # available options: off, login, login.sync, diastole.single, diastole.double, join
+  mode: off
   # Players logging in from these IP addresses will be exempted from this limit
   exemptAddresses:
   - 127.0.0.1
+  # Possible address names that players can join this server with /transfer
+  # localize.address is automatically added
+  aka:
+  # examples:
+#  - server.pmmp.io       # assuming the port from server.properties
+#  - server.pmmp.io:19135
 ...
