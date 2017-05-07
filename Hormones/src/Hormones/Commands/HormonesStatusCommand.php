@@ -22,6 +22,7 @@ use pocketmine\command\CommandSender;
 class HormonesStatusCommand extends HormonesCommand{
 	public function __construct(HormonesPlugin $plugin){
 		parent::__construct($plugin, "hormones", "See Hormones version and status", "/hormones");
+		$this->setPermission("hormones.admin.status");
 	}
 
 	public function execute(CommandSender $sender, $commandLabel, array $args){
