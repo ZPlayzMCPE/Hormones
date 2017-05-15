@@ -70,7 +70,7 @@ class NetChat extends PluginBase implements Listener{
 		return $this->loadedChannels[mb_strtolower($name)] ?? null;
 	}
 
-	public function lazyGetChannel(string $name, callable $return, callable $notFound){
+	public function lazyGetChannel(string $name, callable $return, callable $notFound = null){
 		$lowName = mb_strtolower($name);
 		if(isset($lowName)){
 			$return($this->loadedChannels[$lowName]);
@@ -84,7 +84,9 @@ class NetChat extends PluginBase implements Listener{
 						throw $result->getException();
 					}
 					if(count($result->rows) === 0){
-						$notFound();
+						if($notFound !== null){
+							$notFound();
+						}
 						return;
 					}
 					$result->fixTypes([
@@ -105,5 +107,12 @@ class NetChat extends PluginBase implements Listener{
 
 	public function getHormones() : HormonesPlugin{
 		return $this->hormones;
+	}
+
+	/**
+	 * @return NetChatSession[]
+	 */
+	public function getSessions() : array{
+		return $this->sessions;
 	}
 }

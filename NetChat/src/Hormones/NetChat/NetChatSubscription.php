@@ -35,4 +35,10 @@ class NetChatSubscription{
 		$this->permLevel = $permLevel;
 		$this->subLevel = $subLevel;
 	}
+
+	public function sendMessage(string $message, int $level){
+		if($this->subLevel <= $level){
+			$this->session->getPlayer()->sendMessage("#{$this->channel->getName()}: $message");
+		}
+	}
 }

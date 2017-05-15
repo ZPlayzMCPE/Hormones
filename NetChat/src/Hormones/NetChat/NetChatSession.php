@@ -69,6 +69,7 @@ class NetChatSession{
 			$this->plugin->lazyGetChannel($row["channel"], function(NetChatChannel $channel) use ($row){
 				$sub = new NetChatSubscription($this, $channel, $row["permLevel"], $row["subLevel"]);
 				$this->subs[mb_strtolower($channel->getName())] = $sub;
+				$channel->addKnownSubscription($sub);
 				$this->decrementInitCount();
 			}, function(){
 				// ON DELETE CASCADE took place between the `SELECT FROM subs` and the `SELECT FROM channels`
@@ -94,5 +95,22 @@ class NetChatSession{
 
 	public function getPlugin() : NetChat{
 		return $this->plugin;
+	}
+
+	public function subToChannel(string $name, string $passphrase, callable $callback){
+		$this->plugin->lazyGetChannel($name, function(NetChatChannel $channel) use ($callback, $passphrase){
+			if($channel->isInviteOnly()){
+				// TODO check
+			}
+			if($channel->hasPermission() && !$this->player->hasPermission($channel->getPermission())){
+				$callback(false, "permission");
+				return;
+			}
+			if($channel->hasPassphrase() && !password_verify($passphrase, $channel->getPassphrase())){
+				$callback(false, "passphrase");
+				return;
+			}
+
+		});
 	}
 }

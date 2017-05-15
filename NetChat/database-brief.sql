@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS hormones_netchat_channels (
 	name VARCHAR(200) PRIMARY KEY,
 	visible BIT(1) NOT NULL,
 	invite BIT(1) NOT NULL, -- if true, one must be invited by former subs in the channel to subscribe
-	passphrase VARCHAR(50) DEFAULT NULL,
+	passphrase VARCHAR(100) DEFAULT NULL,
 	permission VARCHAR(200) DEFAULT NULL,
 	defaultPerm TINYINT SIGNED NOT NULL DEFAULT 0 -- may be -1 (QUIET) on some channels
 );

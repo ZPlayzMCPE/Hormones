@@ -85,6 +85,9 @@ class NetChatChannel{
 		return $this->defaultPerm;
 	}
 
+	/**
+	 * @return NetChatSubscription[]
+	 */
 	public function getOnlineSubs() : array{
 		return $this->onlineSubs;
 	}

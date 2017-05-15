@@ -28,7 +28,7 @@ class ChatEventHormone extends Hormone{
 	public $channel;
 
 	public function getType() : string{
-		return "Hormones.Utils.NetChat.ChatEvent";
+		return ChatEventHormone::TYPE;
 	}
 
 	public function getData() : array{
@@ -44,6 +44,17 @@ class ChatEventHormone extends Hormone{
 	public function respond(array $args){
 		/** @var NetChat $plugin */
 		list($plugin) = $args;
-		// TODO handle
+		$channel = $plugin->getLoadedChannel($this->channel);
+		if($channel !== null){
+			foreach($channel->getOnlineSubs() as $sub){
+				if($this->translatable){
+					// TODO handle translations
+					$message = $this->message;
+				}else{
+					$message = $this->message;
+				}
+				$sub->sendMessage($message, $this->priority);
+			}
+		}
 	}
 }
