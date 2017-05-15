@@ -13,7 +13,7 @@
  *
 */
 
-namespace Hormones\Utils\NetChat;
+namespace Hormones\NetChat;
 
 /**
  * Note that "join" and "quit" refers to joining and leaving any tissues, while

@@ -13,7 +13,7 @@
  *
 */
 
-namespace Hormones\Utils\NetChat;
+namespace Hormones\NetChat;
 
 use libasynql\DirectQueryMysqlTask;
 use libasynql\result\MysqlErrorResult;
@@ -22,7 +22,7 @@ use libasynql\result\MysqlSelectResult;
 use pocketmine\Player;
 
 class NetChatSession{
-	private $module;
+	private $plugin;
 	private $player;
 
 	private $inited = false;
@@ -30,12 +30,12 @@ class NetChatSession{
 	/** @var NetChatSubscription[] */
 	private $subs = [];
 
-	public function __construct(NetChatModule $module, Player $player){
-		$this->module = $module;
+	public function __construct(NetChat $module, Player $player){
+		$this->plugin = $module;
 		$this->player = $player;
 
-		$this->module->getPlugin()->getServer()->getScheduler()->scheduleAsyncTask(new DirectQueryMysqlTask(
-			$this->module->getPlugin()->getCredentials(),
+		$this->plugin->getServer()->getScheduler()->scheduleAsyncTask(new DirectQueryMysqlTask(
+			$this->plugin->getHormones()->getCredentials(),
 			"SELECT channel, permLevel, subLevel FROM hormones_netchat_subs WHERE user = ?",
 			[
 				["s", $this->player->getName()]
@@ -66,7 +66,7 @@ class NetChatSession{
 
 		$this->initCount = count($result->rows);
 		foreach($result->rows as $row){
-			$this->module->lazyGetChannel($row["channel"], function(NetChatChannel $channel) use ($row){
+			$this->plugin->lazyGetChannel($row["channel"], function(NetChatChannel $channel) use ($row){
 				$sub = new NetChatSubscription($this, $channel, $row["permLevel"], $row["subLevel"]);
 				$this->subs[mb_strtolower($channel->getName())] = $sub;
 				$this->decrementInitCount();
@@ -85,14 +85,14 @@ class NetChatSession{
 	}
 
 	public function finalize(){
-
+		// TODO save data
 	}
 
 	public function getPlayer() : Player{
 		return $this->player;
 	}
 
-	public function getModule() : NetChatModule{
-		return $this->module;
+	public function getPlugin() : NetChat{
+		return $this->plugin;
 	}
 }

@@ -13,12 +13,14 @@
  *
 */
 
-namespace Hormones\Utils\NetChat\Hormones;
+namespace Hormones\NetChat\Hormones;
 
 use Hormones\Hormone\Hormone;
-use Hormones\HormonesPlugin;
+use Hormones\NetChat\NetChat;
 
 class ChatEventHormone extends Hormone{
+	const TYPE = "Hormones.Utils.NetChat.ChatEvent";
+
 	public $priority;
 	public $message;
 	public $translatable = false;
@@ -40,9 +42,8 @@ class ChatEventHormone extends Hormone{
 	}
 
 	public function respond(array $args){
-		/** @var HormonesPlugin $plugin */
+		/** @var NetChat $plugin */
 		list($plugin) = $args;
-		$module = $plugin->getNetChatModule();
 		// TODO handle
 	}
 }

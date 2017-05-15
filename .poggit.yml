@@ -13,4 +13,11 @@ projects:
         version: 1.2.0
       - src: Falkirks/spoondetector/spoondetector
         version: 0.0.0
+
+  NetChat:
+    path: NetChat
+
+    libs:
+      - src: poggit/libasynql/libasynql
+        version: 1.2.0
 ...

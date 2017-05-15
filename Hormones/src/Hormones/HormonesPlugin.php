@@ -25,7 +25,6 @@ use Hormones\Lymph\LymphVessel;
 use Hormones\TimingStats\TimerSet;
 use Hormones\Utils\Balancer\BalancerModule;
 use Hormones\Utils\Moderation\ModerationModule;
-use Hormones\Utils\NetChat\NetChatModule;
 use Hormones\Utils\SingleSession\SingleSessionModule;
 use Hormones\Utils\TransferOnly\TransferOnlyModule;
 use libasynql\MysqlCredentials;
@@ -62,8 +61,6 @@ class HormonesPlugin extends PluginBase{
 	private $singleSessionModule;
 	/** @var TransferOnlyModule */
 	private $transferOnlyModule;
-	/** @var NetChatModule */
-	private $netChatModule;
 
 	/** @var callable[] */
 	private $arteryDiastoleHandlers = [];
@@ -121,7 +118,6 @@ class HormonesPlugin extends PluginBase{
 		$this->moderationModule = new ModerationModule($this);
 		$this->singleSessionModule = new SingleSessionModule($this);
 		$this->transferOnlyModule = new TransferOnlyModule($this);
-		$this->netChatModule = new NetChatModule($this);
 	}
 
 	private function calcServerId(){
@@ -199,9 +195,6 @@ class HormonesPlugin extends PluginBase{
 		return $this->transferOnlyModule;
 	}
 
-	public function getNetChatModule() : NetChatModule{
-		return $this->netChatModule;
-	}
 
 	public static function setNthBitSmallEndian(int $n, int $bytes){
 		$offset = $n >> 3;

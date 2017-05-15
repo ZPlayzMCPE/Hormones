@@ -13,7 +13,7 @@
  *
 */
 
-namespace Hormones\Utils\NetChat;
+namespace Hormones\NetChat;
 
 class NetChatChannel{
 	/** @var string */

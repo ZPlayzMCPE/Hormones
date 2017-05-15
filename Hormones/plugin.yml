@@ -1,5 +1,5 @@
 name: Hormones
-version: 2.0.0
+version: 2.0.0-alpha
 api:
 - 3.0.0-alpha5
 main: Hormones\HormonesPlugin
@@ -10,7 +10,6 @@ softdepend:
 - ServerAuth
 - HereAuth
 - PiggyAuth
-extensions: mbstring
 
 permissions:
   hormones:

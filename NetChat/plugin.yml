@@ -1,0 +1,9 @@
+name: NetChat
+version: 1.0.0-alpha
+api:
+- 3.0.0-alpha5
+main: Hormones\NetChat\NetChat
+authors:
+- SOFe
+depend: Hormones
+extensions: mbstring

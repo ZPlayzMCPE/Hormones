@@ -13,7 +13,7 @@
  *
 */
 
-namespace Hormones\Utils\NetChat\Constants;
+namespace Hormones\NetChat\Constants;
 
 class ChanRequiredPerms{
 	const MIN_PERM_CHSUB = ChanPermLevel::QUIET;

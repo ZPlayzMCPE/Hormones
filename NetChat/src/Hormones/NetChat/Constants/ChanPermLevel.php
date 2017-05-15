@@ -13,11 +13,13 @@
  *
 */
 
-namespace Hormones\Utils\NetChat\Constants;
+namespace Hormones\NetChat\Constants;
 
-class ChanSubLevel{
-	const VERBOSE = 0;    // including online/offline messages
-	const NORMAL = 1;     // normal chat messages
-	const MENTION = 2;    // chat messages mentioning subscriber
-	const IGNORING = 3;   // ignores all messages from this channel
+class ChanPermLevel{
+	const BANNED = -2;
+	const QUIET = -1;
+	const SUBSCRIBER = 0;
+//	const VOICE = 1;
+	const MODERATOR = 2;
+	const ADMIN = 3;
 }

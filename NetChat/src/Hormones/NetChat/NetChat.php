@@ -13,9 +13,11 @@
  *
 */
 
-namespace Hormones\Utils\NetChat;
+namespace Hormones\NetChat;
 
+use Hormones\Event\UnknownHormoneEvent;
 use Hormones\HormonesPlugin;
+use Hormones\NetChat\Hormones\ChatEventHormone;
 use libasynql\DirectQueryMysqlTask;
 use libasynql\result\MysqlErrorResult;
 use libasynql\result\MysqlResult;
@@ -23,23 +25,21 @@ use libasynql\result\MysqlSelectResult;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\player\PlayerQuitEvent;
+use pocketmine\plugin\PluginBase;
 
-class NetChatModule implements Listener{
-	private $plugin;
-	private $enabled;
+class NetChat extends PluginBase implements Listener{
+	/** @var HormonesPlugin */
+	private $hormones;
 	/** @var NetChatSession[] */
 	private $sessions = [];
 	/** @var NetChatChannel[] */
 	private $loadedChannels = []; // TODO clean loaded channels periodically
 
-	public function __construct(HormonesPlugin $plugin){
-		$this->plugin = $plugin;
-		$this->enabled = $plugin->getConfig()->getNested("netChat.enabled", false);
-		if(!$this->enabled){
-			return;
-		}
+	public function onEnable(){
+		$this->hormones = HormonesPlugin::getInstance($this->getServer()) or assert(false, "Hormones not loaded");
+		// TODO check version
 
-		$this->plugin->getServer()->getPluginManager()->registerEvents($this, $plugin);
+		$this->hormones->getServer()->getPluginManager()->registerEvents($this, $this);
 	}
 
 	/**
@@ -59,6 +59,13 @@ class NetChatModule implements Listener{
 		}
 	}
 
+	public function e_identifyHormone(UnknownHormoneEvent $event){
+		if($event->getType() === ChatEventHormone::TYPE){
+			$event->setHormone(new ChatEventHormone($event->getReceptors()));
+			$event->setRespondArgs([$this]);
+		}
+	}
+
 	public function getLoadedChannel(string $name){
 		return $this->loadedChannels[mb_strtolower($name)] ?? null;
 	}
@@ -68,7 +75,7 @@ class NetChatModule implements Listener{
 		if(isset($lowName)){
 			$return($this->loadedChannels[$lowName]);
 		}else{
-			$task = new DirectQueryMysqlTask($this->plugin->getCredentials(),
+			$task = new DirectQueryMysqlTask($this->hormones->getCredentials(),
 				"SELECT name, visible, invite, passphrase, permission, defaultPerm FROM hormones_netchat_channels WHERE name = ?", [
 					["s", $name]
 				], function(MysqlResult $result) use ($lowName, $return, $notFound){
@@ -92,15 +99,11 @@ class NetChatModule implements Listener{
 						$row["passphrase"] ?? null, $row["permission"] ?? null, $row["defaultPerm"]);
 					$return($channel);
 				});
-			$this->plugin->getServer()->getScheduler()->scheduleAsyncTask($task);
+			$this->hormones->getServer()->getScheduler()->scheduleAsyncTask($task);
 		}
 	}
 
-	public function isEnabled() : bool{
-		return $this->enabled;
-	}
-
-	public function getPlugin() : HormonesPlugin{
-		return $this->plugin;
+	public function getHormones() : HormonesPlugin{
+		return $this->hormones;
 	}
 }
