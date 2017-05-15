@@ -37,6 +37,6 @@ class Timer{
 	}
 
 	public function evalAverage() : float{
-		return array_sum($this->data) / count($this->data);
+		return count($this->data) === 0 ? \NAN : array_sum($this->data) / count($this->data);
 	}
 }

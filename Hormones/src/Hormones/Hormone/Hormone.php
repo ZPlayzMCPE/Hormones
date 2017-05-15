@@ -16,11 +16,26 @@
 namespace Hormones\Hormone;
 
 use Hormones\Event\UnknownHormoneEvent;
+use Hormones\Hormone\Defaults\StopServerHormone;
+use Hormones\Hormone\Defaults\VerifyDatabaseVersionHormone;
 use Hormones\HormonesPlugin;
+use Hormones\Utils\Moderation\Hormones\BroadcastMessageHormone;
+use Hormones\Utils\Moderation\Hormones\PenaltyHormone;
+use Hormones\Utils\SingleSession\Hormones\NotifyJoinHormone;
+use Hormones\Utils\SingleSession\Hormones\PushPlayersHormone;
+use Hormones\Utils\SingleSession\Hormones\SpecificBumpHormone;
+use Hormones\Utils\TransferOnly\DeclareTransferHormone;
 
 abstract class Hormone{
 	public static $knownTypes = [ // I struggled so many times not to rename this to antigen...
-		"hormones.HormoneName" => Hormone::class, // NOTE this is a dummy entry. Delete this when there are real hormones.
+		"Hormones.StopServer" => StopServerHormone::class,
+		"Hormones.VerifyDbVersion" => VerifyDatabaseVersionHormone::class,
+		"Hormones.Moderation.BroadcastMessage" => BroadcastMessageHormone::class,
+		"Hormones.Moderation.Penalty" => PenaltyHormone::class,
+		"Hormones.SingleSession.NotifyJoin" => NotifyJoinHormone::class,
+		"Hormones.SingleSession.PushPlayers" => PushPlayersHormone::class,
+		"Hormones.SingleSession.SpecificBump" => SpecificBumpHormone::class,
+		"Hormones.TransferOnly.DeclareTransfer" => DeclareTransferHormone::class,
 	];
 
 	private $hormoneId;

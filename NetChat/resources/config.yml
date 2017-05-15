@@ -1,0 +1,10 @@
+---
+# The default chat channel that players joining this server should talk in
+# "l", "o" and "n" are special channels: "l" is the server-local channel, "o" is the channel that only exists in this organ, "n" is the network-wide channel.
+defaultChannel: l
+defaultJoinnedChannels:
+- l
+- o
+- n
+# you may put other channel names here. Nonexistent channels will be created as network-wide channels.
+...

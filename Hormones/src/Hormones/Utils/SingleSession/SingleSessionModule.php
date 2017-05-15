@@ -43,15 +43,16 @@ class SingleSessionModule implements Listener{
 		$this->plugin = $plugin;
 
 		static $modeMap = [
+			"" => SingleSessionModule::MODE_OFF,
 			"off" => SingleSessionModule::MODE_OFF,
 			"push" => SingleSessionModule::MODE_PUSH,
 			"bump" => SingleSessionModule::MODE_BUMP,
 			"ip-push" => SingleSessionModule::MODE_IP_PUSH
 		];
-		if(isset($modeMap[strtolower($modeStr = $plugin->getConfig()->getNested("singleSession.mode", "none"))])){
+		if(isset($modeMap[strtolower($modeStr = $plugin->getConfig()->getNested("singleSession.mode", false))])){
 			$this->mode = $modeMap[strtolower($modeStr)];
 		}else{
-			$plugin->getLogger()->warning("Unknown singleSession mode, using default value (\"off\")");
+			$plugin->getLogger()->warning("Unknown singleSession mode \"$modeStr\", using default value (\"off\")");
 			$this->mode = SingleSessionModule::MODE_OFF;
 		}
 
@@ -99,6 +100,9 @@ class SingleSessionModule implements Listener{
 	public function e_onLogin(PlayerLoginEvent $event){
 		$hormone = new NotifyJoinHormone();
 		$hormone->username = $event->getPlayer()->getName();
+		$hormone->ip = $event->getPlayer()->getAddress();
+		$hormone->tissueId = $this->plugin->getTissueId();
+		$hormone->release($this->plugin);
 	}
 
 	public function getPlugin() : HormonesPlugin{

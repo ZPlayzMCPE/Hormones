@@ -28,20 +28,27 @@ class Artery extends QueryMysqlTask{
 	private $organId;
 	private $objectCreated;
 
-	public function __construct(MysqlCredentials $credentials, int $hormonesAfter, int $organId){
+	private $normal;
+
+	public function __construct(MysqlCredentials $credentials, int $hormonesAfter, int $organId, bool $normal = true){
 		parent::__construct($credentials);
 		$this->hormonesAfter = $hormonesAfter;
 		$this->organId = $organId;
 		$this->objectCreated = microtime(true);
+		$this->normal = $normal;
 	}
 
 	protected function execute(){
+		if(!$this->normal){
+			return;
+		}
+
 		$bitmask = str_repeat("\0", 8);
 		if($this->hormonesAfter !== -1){
 			$after = "hormoneId > ?";
 			$args = [["i", $this->hormonesAfter], ["s", $bitmask]];
 		}else{
-			$after = "expiryTime > UNIX_TIMESTAMP()";
+			$after = "UNIX_TIMESTAMP(expiry) > UNIX_TIMESTAMP()";
 			$args = [["s", $bitmask]];
 		}
 
@@ -52,32 +59,37 @@ class Artery extends QueryMysqlTask{
 	}
 
 	public function onCompletion(Server $server){
-		$result = $this->getResult();
 		$plugin = HormonesPlugin::getInstance($server);
 		if(!$plugin->isEnabled()){
 			return;
 		}
 		$lastHormoneId = $this->hormonesAfter;
-		if($result instanceof MysqlErrorResult){
-			$plugin->getLogger()->logException($result->getException());
-			return;
-		}elseif($result instanceof MysqlSelectResult){
-			$result->fixTypes([
-				"hormoneId" => MysqlSelectResult::TYPE_INT,
-				"type" => MysqlSelectResult::TYPE_STRING,
-				"receptors" => MysqlSelectResult::TYPE_STRING,
-				"creationTime" => MysqlSelectResult::TYPE_INT,
-				"expiryTime" => MysqlSelectResult::TYPE_INT,
-				"json" => MysqlSelectResult::TYPE_STRING
-			]);
-			foreach($result->rows as $row){
-				Hormone::handleRow($plugin, $row);
-				$lastHormoneId = $row["hormoneId"];
+		if($this->normal){
+			$result = $this->getResult();
+			if(!$plugin->isEnabled()){
+				return;
 			}
-			$plugin->onArteryDiastole();
-			$plugin->getTimers()->arteryNet->addDatum($result->getTiming());
+			if($result instanceof MysqlErrorResult){
+				$plugin->getLogger()->logException($result->getException());
+				return;
+			}elseif($result instanceof MysqlSelectResult){
+				$result->fixTypes([
+					"hormoneId" => MysqlSelectResult::TYPE_INT,
+					"type" => MysqlSelectResult::TYPE_STRING,
+					"receptors" => MysqlSelectResult::TYPE_STRING,
+					"creationTime" => MysqlSelectResult::TYPE_INT,
+					"expiryTime" => MysqlSelectResult::TYPE_INT,
+					"json" => MysqlSelectResult::TYPE_STRING
+				]);
+				foreach($result->rows as $row){
+					Hormone::handleRow($plugin, $row);
+					$lastHormoneId = $row["hormoneId"];
+				}
+				$plugin->onArteryDiastole();
+				$plugin->getTimers()->arteryNet->addDatum($result->getTiming());
+			}
 		}
 		$plugin->getTimers()->arteryCycle->addDatum(microtime(true) - $this->objectCreated);
-		$server->getScheduler()->scheduleAsyncTask(new Artery($this->getCredentials(), $lastHormoneId, $this->organId));
+		$server->getScheduler()->scheduleAsyncTask(new Artery($this->getCredentials(), $lastHormoneId, $this->organId, $this->normal));
 	}
 }

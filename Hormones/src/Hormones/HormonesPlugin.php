@@ -27,14 +27,24 @@ use Hormones\Utils\Balancer\BalancerModule;
 use Hormones\Utils\Moderation\ModerationModule;
 use Hormones\Utils\SingleSession\SingleSessionModule;
 use Hormones\Utils\TransferOnly\TransferOnlyModule;
+use libasynql\DirectQueryMysqlTask;
 use libasynql\MysqlCredentials;
+use pocketmine\command\ConsoleCommandSender;
 use pocketmine\plugin\PluginBase;
+use pocketmine\scheduler\PluginTask;
 use pocketmine\Server;
+use pocketmine\utils\Config;
 use pocketmine\utils\Utils;
 use spoondetector\SpoonDetector;
 
 class HormonesPlugin extends PluginBase{
-	const DATABASE_VERSION = 1;
+	const DATABASE_MAJOR_VERSION = 1; // only to be bupmed if backwards-incompatible
+	const DATABASE_MINOR_VERSION = 0; // only to be bumped if plugin cannot work with last database
+
+	const DATABASE_VERSION = (HormonesPlugin::DATABASE_MAJOR_VERSION << 16) | (HormonesPlugin::DATABASE_MINOR_VERSION << 0);
+
+	/** @var Config|null */
+	private $myConfig;
 
 	/** @var MysqlCredentials */
 	private $credentials;
@@ -103,8 +113,30 @@ class HormonesPlugin extends PluginBase{
 			$this->displayName = $this->visibleAddress . ":" . $this->getServer()->getPort();
 		}
 
-		$this->getServer()->getScheduler()->scheduleAsyncTask(new LymphVessel($cred, $this));
-		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, -1, $organId));
+		$normal = !$this->getServer()->getConfigBoolean("hormones.stopasync", false);
+		$this->getServer()->getScheduler()->scheduleAsyncTask(new LymphVessel($cred, $this, $normal));
+		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, -1, $organId, $normal));
+		$this->getLogger()->notice(($normal ? "Normal init" : "Dummy init") . " of LymphVessel and Artery");
+		// dummy query TODO check why this blocks
+		$size = $this->getServer()->getScheduler()->getAsyncTaskPoolSize();
+		for($i = 0; $i < $size; $i++){
+			$this->getServer()->getScheduler()->scheduleAsyncTaskToWorker(new DirectQueryMysqlTask($this->getCredentials(), "SHOW SCHEMAS"), $i);
+		}
+		if($this->getServer()->getConfigBoolean("hormones.regular-debug", false)){
+			$this->getServer()->getScheduler()->scheduleDelayedRepeatingTask(new class($this) extends PluginTask{
+				private $i = 0;
+
+				public function onRun($currentTick){
+					$this->getOwner()->getServer()->dispatchCommand(new ConsoleCommandSender(), "status");
+					$this->getOwner()->getServer()->dispatchCommand(new ConsoleCommandSender(), "hormones");
+					++$this->i;
+					if(($this->i & 7) === 7){
+						$this->getOwner()->getServer()->getMemoryManager()->dumpServerMemory($this->getOwner()->getServer()->getDataPath() . "/dumpmem_{$this->i}", 48, 80);
+					}
+				}
+			}, 1200, 1200);
+		}
+
 		Kidney::init($this);
 		if($this->getConfig()->getNested("organicTransfer.enabled", true)){
 			SwitchOrganCommand::registerOrganicStuff($this);
@@ -118,6 +150,13 @@ class HormonesPlugin extends PluginBase{
 		$this->moderationModule = new ModerationModule($this);
 		$this->singleSessionModule = new SingleSessionModule($this);
 		$this->transferOnlyModule = new TransferOnlyModule($this);
+	}
+
+	public function getConfig() : Config{
+		if(!isset($this->myConfig)){
+			$this->myConfig = new Config($this->getDataFolder() . "config.yml");
+		}
+		return $this->myConfig;
 	}
 
 	private function calcServerId(){

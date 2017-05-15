@@ -36,7 +36,7 @@ class SwitchOrganCommand extends HormonesCommand{
 			assert($result instanceof MysqlErrorResult);
 			throw $result->getException();
 		}
-		$parent = $plugin->getServer()->getPluginManager()->getPermission("hormones.transfer.oragnic");
+		$parent = $plugin->getServer()->getPluginManager()->getPermission("hormones.transfer.organic");
 		foreach($result->rows as $row){
 			$organId = (int) $row["organId"];
 			$organName = $row["name"];
