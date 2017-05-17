@@ -18,6 +18,7 @@ namespace Hormones\Commands;
 use Hormones\HormonesCommand;
 use Hormones\HormonesPlugin;
 use pocketmine\command\CommandSender;
+use pocketmine\utils\TextFormat;
 
 class HormonesStatusCommand extends HormonesCommand{
 	public function __construct(HormonesPlugin $plugin){
@@ -32,11 +33,12 @@ class HormonesStatusCommand extends HormonesCommand{
 
 		$sender->sendMessage("Using {$this->getPlugin()->getName()} v{$this->getPlugin()->getDescription()->getVersion()} by " . implode(", ", $this->getPlugin()->getDescription()->getAuthors()));
 		$timers = $this->getPlugin()->getTimers();
-		$sender->sendMessage("Vein up time: " . $timers->veinUp->evalAverage());
-		$sender->sendMessage("Artery net time: " . $timers->arteryNet->evalAverage());
-		$sender->sendMessage("Artery cycle time: " . $timers->arteryCycle->evalAverage());
-		$sender->sendMessage("Lymph net time: " . $timers->lymphNet->evalAverage());
-		$sender->sendMessage("Lymph cycle time: " . $timers->lymphCycle->evalAverage());
+		$sender->sendMessage("Vein up time (s): " . TextFormat::AQUA . $timers->veinUp->evalAverage());
+		$sender->sendMessage("Artery net time (s): " . TextFormat::AQUA . $timers->arteryNet->evalAverage());
+		$sender->sendMessage("Artery cycle time (s): " . TextFormat::AQUA . $timers->arteryCycle->evalAverage());
+		$sender->sendMessage("Lymph net time (s): " . TextFormat::AQUA . $timers->lymphNet->evalAverage());
+		$sender->sendMessage("Lymph cycle time (s): " . TextFormat::AQUA . $timers->lymphCycle->evalAverage());
+		$sender->sendMessage("Last arterial hormone ID: " . TextFormat::AQUA . $this->getPlugin()->getLastArterialHormoneId());
 		return true;
 	}
 }

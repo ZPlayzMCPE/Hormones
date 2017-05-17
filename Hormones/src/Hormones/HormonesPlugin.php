@@ -77,6 +77,8 @@ class HormonesPlugin extends PluginBase{
 
 	/** @var TimerSet */
 	private $timers;
+	/** @var int */
+	private $lastArterialHormoneId;
 
 	public static function getInstance(Server $server) : HormonesPlugin{
 		/** @noinspection PhpIncompatibleReturnTypeInspection */
@@ -99,27 +101,32 @@ class HormonesPlugin extends PluginBase{
 
 		$this->credentials = $cred = MysqlCredentials::fromArray($this->getConfig()->get("mysql"));
 		if(!DatabaseSetup::setupDatabase($cred, $this, $organId)){
+			$this->getServer()->getPluginManager()->disablePlugin($this);
 			return;
 		}
+		$this->getLogger()->debug("Localizing...");
 		$this->organName = $this->getConfig()->getNested("localize.organ");
 		$this->organId = $organId;
 		$this->serverId = $this->calcServerId();
 		$this->visibleAddress = $this->getConfig()->getNested("localize.address", "auto");
 		if($this->visibleAddress === "auto"){
+			$this->getLogger()->notice("You did not set the server visible address, so Hormones is automatically detecting your external IP. This may take a few seconds. Please set localize.address in the Hormones config file to make this faster.");
 			$this->visibleAddress = Utils::getIP();
+		}elseif(HormonesPlugin::reserved_ip($this->visibleAddress)){
+			$this->getLogger()->notice("The server visible address is set to $this->visibleAddress, which is an internal IP. Players may not be able to transfer to this server if you don't change it to an external IP.");
 		}
 		$this->displayName = $this->getConfig()->getNested("localize.name", "auto");
 		if($this->displayName === "auto"){
 			$this->displayName = $this->visibleAddress . ":" . $this->getServer()->getPort();
 		}
 
-		$normal = !$this->getServer()->getConfigBoolean("hormones.stopasync", false);
+		$this->getLogger()->debug("Scheduling tasks...");
+		$normal = !$this->getServer()->getConfigBoolean("hormones.stopasync", false); // debug line, can ignore this
 		$this->getServer()->getScheduler()->scheduleAsyncTask(new LymphVessel($cred, $this, $normal));
-		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, -1, $organId, $normal));
-		$this->getLogger()->notice(($normal ? "Normal init" : "Dummy init") . " of LymphVessel and Artery");
-		// dummy query TODO check why this blocks
+		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, Artery::STARTUP_ID, $organId, $normal));
 		$size = $this->getServer()->getScheduler()->getAsyncTaskPoolSize();
 		for($i = 0; $i < $size; $i++){
+			$this->getLogger()->debug("Initializing libasynql on async worker #$i");
 			$this->getServer()->getScheduler()->scheduleAsyncTaskToWorker(new DirectQueryMysqlTask($this->getCredentials(), "SHOW SCHEMAS"), $i);
 		}
 		if($this->getServer()->getConfigBoolean("hormones.regular-debug", false)){
@@ -135,9 +142,11 @@ class HormonesPlugin extends PluginBase{
 					}
 				}
 			}, 1200, 1200);
-		}
+		} // debug stuff
 
 		Kidney::init($this);
+
+		$this->getLogger()->debug("Registering commands");
 		if($this->getConfig()->getNested("organicTransfer.enabled", true)){
 			SwitchOrganCommand::registerOrganicStuff($this);
 		}
@@ -146,6 +155,7 @@ class HormonesPlugin extends PluginBase{
 
 		$this->timers = new TimerSet;
 
+		$this->getLogger()->debug("Initializing modules");
 		$this->balancerModule = new BalancerModule($this);
 		$this->moderationModule = new ModerationModule($this);
 		$this->singleSessionModule = new SingleSessionModule($this);
@@ -235,10 +245,50 @@ class HormonesPlugin extends PluginBase{
 	}
 
 
-	public static function setNthBitSmallEndian(int $n, int $bytes){
+	public static function setNthBitSmallEndian(int $n, int $bytes = 8){
 		$offset = $n >> 3;
 		$byteArray = str_repeat("\0", $bytes);
 		$byteArray{$offset} = chr(1 << ($n & 7));
 		return $byteArray;
+	}
+
+	/**
+	 * @param string $ip
+	 * @return bool
+	 * @link http://stackoverflow.com/a/14125871
+	 */
+	public static function reserved_ip(string $ip) : bool{
+		if($ip === "localhost"){
+			return true;
+		}
+		$ip2long = ip2long($ip);
+		if($ip2long === false){
+			return false;
+		}
+		$reserved_ips = [ // not an exhaustive list
+			'167772160' => 184549375,  /*    10.0.0.0 -  10.255.255.255 */
+			'3232235520' => 3232301055, /* 192.168.0.0 - 192.168.255.255 */
+			'2130706432' => 2147483647, /*   127.0.0.0 - 127.255.255.255 */
+			'2851995648' => 2852061183, /* 169.254.0.0 - 169.254.255.255 */
+			'2886729728' => 2887778303, /*  172.16.0.0 -  172.31.255.255 */
+			'3758096384' => 4026531839, /*   224.0.0.0 - 239.255.255.255 */
+		];
+
+		$ip_long = sprintf('%u', $ip2long);
+
+		foreach($reserved_ips as $ip_start => $ip_end){
+			if(($ip_long >= $ip_start) && ($ip_long <= $ip_end)){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public function setLastArterialHormoneId(int $lastArterialHormoneId){
+		$this->lastArterialHormoneId = $lastArterialHormoneId;
+	}
+
+	public function getLastArterialHormoneId() : int{
+		return $this->lastArterialHormoneId;
 	}
 }

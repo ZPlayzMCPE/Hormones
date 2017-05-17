@@ -39,7 +39,7 @@ abstract class Hormone{
 	];
 
 	private $hormoneId;
-	/** @var string [64] a 64-bit byte-array bitmask */
+	/** @var string [8] a 64-bit byte-array bitmask */
 	private $hormoneReceptors; // I wanted to make this an int, but then I considered it won't work on 32-bit systems
 	private $hormoneCreationTime;
 	private $hormoneExpiryTime;

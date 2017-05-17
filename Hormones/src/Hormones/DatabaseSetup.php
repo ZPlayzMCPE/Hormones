@@ -33,6 +33,7 @@ class DatabaseSetup{
 	 * @return bool
 	 */
 	public static function setupDatabase(MysqlCredentials $cred, HormonesPlugin $plugin, &$organId) : bool{
+		$plugin->getLogger()->debug("Checking database...");
 		$mysqli = $cred->newMysqli();
 		$mysqli->query("CREATE TABLE IF NOT EXISTS hormones_metadata (name VARCHAR(20) PRIMARY KEY, val VARCHAR(20))");
 
@@ -42,6 +43,7 @@ class DatabaseSetup{
 		if($result instanceof MysqlSelectResult and count($result->rows) > 0){
 			$version = (int) $result->rows[0]["val"];
 			if($version < HormonesPlugin::DATABASE_VERSION){
+				$plugin->getLogger()->notice("Updating the database! Other servers in the network might become incompatible and require updating.");
 				$hormone = new VerifyDatabaseVersionHormone;
 				$hormone->pluginVersion = $plugin->getDescription()->getVersion();
 				$hormone->dbVersion = HormonesPlugin::DATABASE_VERSION;
@@ -54,6 +56,8 @@ class DatabaseSetup{
 				$plugin->getLogger()->critical("Plugin is outdated");
 				$plugin->getServer()->getPluginManager()->disablePlugin($plugin);
 				return false;
+			}else{
+				$plugin->getLogger()->debug("Database OK");
 			}
 		}else{
 			$plugin->getLogger()->info("Thanks for using Hormones the first time. Setting up database tables...");

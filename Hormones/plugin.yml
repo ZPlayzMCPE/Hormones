@@ -13,7 +13,7 @@ softdepend:
 
 permissions:
   hormones:
-    default: false
+    default: op
     description: Allows full access to Hormones. A very powerful permission.
     children:
       hormones.transfer:
@@ -28,19 +28,19 @@ permissions:
 #            default: true
       hormones.admin:
         description: Allows administrative access to the network, i.e. those related to server maintenance.
-        default: false
+        default: op
         children:
           hormones.admin.stop:
             description: Allows triggering shutdown/restart of all network servers.
-            default: false
+            default: op
           hormones.admin.status:
             description: Allows checking Hormones status with /hormones
             default: true
       hormones.moderation:
-        default: false
+        default: op
         children:
           hormones.moderation.moderator:
-            default: false
+            default: op
             children:
               hormones.moderation.moderator.sectional:
                 default: op
@@ -52,11 +52,11 @@ permissions:
                   hormones.moderation.moderator.sectional.broadcast:
                     default: op
               hormones.moderation.moderator.global:
-                default: false
+                default: op
                 children:
                   hormones.moderation.moderator.global.ban:
-                    default: false
+                    default: op
                   hormones.moderation.moderator.global.mute:
-                    default: false
+                    default: op
                   hormones.moderation.moderator.global.broadcast:
-                    default: false
+                    default: op

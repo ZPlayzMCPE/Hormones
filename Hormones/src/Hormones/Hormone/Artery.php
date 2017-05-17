@@ -24,11 +24,13 @@ use libasynql\result\MysqlSelectResult;
 use pocketmine\Server;
 
 class Artery extends QueryMysqlTask{
+	const STARTUP_ID = -2;
 	private $hormonesAfter;
 	private $organId;
 	private $objectCreated;
 
 	private $normal;
+	private $virtualMax;
 
 	public function __construct(MysqlCredentials $credentials, int $hormonesAfter, int $organId, bool $normal = true){
 		parent::__construct($credentials);
@@ -43,8 +45,8 @@ class Artery extends QueryMysqlTask{
 			return;
 		}
 
-		$bitmask = str_repeat("\0", 8);
-		if($this->hormonesAfter !== -1){
+		$bitmask = bin2hex(HormonesPlugin::setNthBitSmallEndian($this->organId, 8));
+		if($this->hormonesAfter !== Artery::STARTUP_ID){
 			$after = "hormoneId > ?";
 			$args = [["i", $this->hormonesAfter], ["s", $bitmask]];
 		}else{
@@ -52,10 +54,20 @@ class Artery extends QueryMysqlTask{
 			$args = [["s", $bitmask]];
 		}
 
-		$this->setResult(MysqlResult::executeQuery($this->getMysqli(), "SELECT
-				hormoneId, type, receptors, UNIX_TIMESTAMP(creation) creationTime, UNIX_TIMESTAMP(expiry) expiryTime, json
-				FROM hormones_blood WHERE $after AND (receptors & ?) > 0",
+		$this->setResult(MysqlResult::executeQuery($db=$this->getMysqli(), $query = "
+			SELECT hormoneId, type, receptors, UNIX_TIMESTAMP(creation) creationTime, UNIX_TIMESTAMP(expiry) expiryTime, json
+				FROM hormones_blood WHERE $after AND ((receptors & HEX(?)) > 0)",
 			$args));
+
+		if($this->hormonesAfter === Artery::STARTUP_ID){
+			$result = MysqlResult::executeQuery($db, "SELECT IFNULL(MAX(hormoneId), -1) max FROM hormones_blood", []);
+			if($result instanceof MysqlSelectResult){
+				$this->virtualMax = (int) $result->rows[0]["max"];
+			}else{
+				assert($result instanceof MysqlErrorResult);
+				throw $result->getException();
+			}
+		}
 	}
 
 	public function onCompletion(Server $server){
@@ -63,7 +75,7 @@ class Artery extends QueryMysqlTask{
 		if(!$plugin->isEnabled()){
 			return;
 		}
-		$lastHormoneId = $this->hormonesAfter;
+		$lastHormoneId = $this->hormonesAfter === Artery::STARTUP_ID ? $this->virtualMax : $this->hormonesAfter;
 		if($this->normal){
 			$result = $this->getResult();
 			if(!$plugin->isEnabled()){
@@ -90,6 +102,7 @@ class Artery extends QueryMysqlTask{
 			}
 		}
 		$plugin->getTimers()->arteryCycle->addDatum(microtime(true) - $this->objectCreated);
+		$plugin->setLastArterialHormoneId($lastHormoneId);
 		$server->getScheduler()->scheduleAsyncTask(new Artery($this->getCredentials(), $lastHormoneId, $this->organId, $this->normal));
 	}
 }
