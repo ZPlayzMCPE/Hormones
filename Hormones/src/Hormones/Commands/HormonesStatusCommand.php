@@ -33,6 +33,9 @@ class HormonesStatusCommand extends HormonesCommand{
 
 		$sender->sendMessage("Using {$this->getPlugin()->getName()} v{$this->getPlugin()->getDescription()->getVersion()} by " . implode(", ", $this->getPlugin()->getDescription()->getAuthors()));
 		$timers = $this->getPlugin()->getTimers();
+		$lymphResult = $this->getPlugin()->getLymphResult();
+		$sender->sendMessage("Organic slots: " . TextFormat::AQUA . "{$lymphResult->onlineSlots} / {$lymphResult->totalSlots} in {$lymphResult->tissueCount} tissues");
+		$sender->sendMessage("Recommended alt server: " . TextFormat::AQUA."{$lymphResult->altServer->displayName} ({$lymphResult->altServer->address}:{$lymphResult->altServer->port})");
 		$sender->sendMessage("Vein up time (s): " . TextFormat::AQUA . $timers->veinUp->evalAverage());
 		$sender->sendMessage("Artery net time (s): " . TextFormat::AQUA . $timers->arteryNet->evalAverage());
 		$sender->sendMessage("Artery cycle time (s): " . TextFormat::AQUA . $timers->arteryCycle->evalAverage());

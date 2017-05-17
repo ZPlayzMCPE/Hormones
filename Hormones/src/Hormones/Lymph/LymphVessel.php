@@ -25,7 +25,7 @@ use libasynql\result\MysqlSelectResult;
 use pocketmine\Server;
 
 class LymphVessel extends QueryMysqlTask{
-	private $serverId;
+	private $tissueId;
 	private $organId;
 	private $usedSlots;
 	private $maxSlots;
@@ -41,7 +41,7 @@ class LymphVessel extends QueryMysqlTask{
 
 	public function __construct(MysqlCredentials $credentials, HormonesPlugin $plugin, bool $normal = true){
 		parent::__construct($credentials);
-		$this->serverId = $plugin->getTissueId();
+		$this->tissueId = $plugin->getTissueId();
 		$this->organId = $plugin->getOrganId();
 		$this->usedSlots = count($plugin->getServer()->getOnlinePlayers());
 		$this->maxSlots = $plugin->getSoftSlotsLimit();
@@ -74,7 +74,7 @@ class LymphVessel extends QueryMysqlTask{
 		$stmt->bind_param(str_replace(" ", "",
 			"s         i        i          i         s   i     i                s            i" .
 			"          i        i          i         s   i     i                s            i"),
-			$this->serverId,
+			$this->tissueId,
 			$this->organId, $this->usedSlots, $this->maxSlots, $this->ip, $this->port, $this->hormonesVersion, $this->displayName, $this->processId,
 			$this->organId, $this->usedSlots, $this->maxSlots, $this->ip, $this->port, $this->hormonesVersion, $this->displayName, $this->processId);
 		$stmt->execute();
@@ -83,11 +83,11 @@ class LymphVessel extends QueryMysqlTask{
 		$result = MysqlResult::executeQuery($mysqli,
 			"SELECT t.tissues, t.online, t.total, t2.ip, t2.port, t2.displayName FROM
 				(SELECT COUNT(*) tissues, IFNULL(SUM(usedSlots), 0) online, IFNULL(SUM(maxSlots), 0) total, MAX(maxSlots - usedSlots) maxAvail
-						FROM hormones_tissues WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10) t
-				LEFT JOIN hormones_tissues t2 ON t.maxAvail = t2.maxSlots - t2.usedSlots
+						FROM hormones_tissues WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 AND tissueId <> ?) t
+				LEFT JOIN hormones_tissues t2 ON t.maxAvail = t2.maxSlots - t2.usedSlots AND tissueId <> ?
 				WHERE UNIX_TIMESTAMP() - UNIX_TIMESTAMP(t2.lastOnline) < 10
 				ORDER BY maxSlots LIMIT 1",
-			[["i", $this->organId]]);
+			[["i", $this->organId], ["s", $this->tissueId], ["s", $this->tissueId]]);
 		// maxSlots - usedSlots = available slots
 		// ORDER BY maxSlots => minimum percentage load
 
