@@ -25,6 +25,7 @@ use pocketmine\Server;
 
 class Artery extends QueryMysqlTask{
 	const STARTUP_ID = -2;
+
 	private $hormonesAfter;
 	private $organId;
 	private $objectCreated;
@@ -54,7 +55,7 @@ class Artery extends QueryMysqlTask{
 			$args = [["s", $bitmask]];
 		}
 
-		$this->setResult(MysqlResult::executeQuery($db=$this->getMysqli(), $query = "
+		$this->setResult(MysqlResult::executeQuery($db = $this->getMysqli(), $query = "
 			SELECT hormoneId, type, receptors, UNIX_TIMESTAMP(creation) creationTime, UNIX_TIMESTAMP(expiry) expiryTime, json
 				FROM hormones_blood WHERE $after AND ((receptors & HEX(?)) > 0)",
 			$args));

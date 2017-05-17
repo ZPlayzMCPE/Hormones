@@ -20,13 +20,15 @@ use Hormones\HormonesPlugin;
 use Hormones\Utils\SingleSession\SingleSessionModule;
 
 class PushPlayersHormone extends Hormone{
+	const TYPE = "Hormones.SingleSession.PushPlayers";
+
 	public $username;
 	public $sourceTissueId;
 	public $sourceTissueName;
 	public $ip;
 
 	public function getType() : string{
-		return "Hormones.SingleSession.PushPlayers";
+		return PushPlayersHormone::TYPE;
 	}
 
 	public function getData() : array{

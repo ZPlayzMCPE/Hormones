@@ -200,7 +200,7 @@ class HormonesPlugin extends PluginBase{
 
 	public function getSoftSlotsLimit() : int{
 		return $this->softSlotsLimit ?? ($this->softSlotsLimit =
-				$this->getConfig()->getNested("playerSoftLimit", $this->getServer()->getMaxPlayers() - 2));
+				$this->getConfig()->getNested("balancer.playerSoftLimit", $this->getServer()->getMaxPlayers() - 2));
 	}
 
 	public function getLymphResult() : LymphResult{

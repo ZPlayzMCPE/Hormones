@@ -19,12 +19,14 @@ use Hormones\Hormone\Hormone;
 use Hormones\HormonesPlugin;
 
 class SpecificBumpHormone extends Hormone{
+	const TYPE = "Hormones.SingleSession.SpecificBump";
+
 	public $username;
 	public $receptingTissueId;
 	public $bumpedFromTissueName;
 
 	public function getType() : string{
-		return "Hormones.SingleSession.SpecificBump";
+		return SpecificBumpHormone::TYPE;
 	}
 
 	public function getData() : array{

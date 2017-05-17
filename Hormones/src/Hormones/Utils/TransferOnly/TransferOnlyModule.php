@@ -150,23 +150,25 @@ class TransferOnlyModule implements Listener{
 	 * @param PlayerJoinEvent $event
 	 */
 	public function e_onJoin(PlayerJoinEvent $event){
-		$plugin = $this->getPlugin();
-		$plugin->getServer()->getScheduler()->scheduleDelayedTask(new class($this, $event->getPlayer()) extends PluginTask{
-			/** @var TransferOnlyModule */
-			private $module;
-			/** @var Player */
-			private $player;
+		if($this->mode === TransferOnlyModule::MODE_JOIN){
+			$plugin = $this->getPlugin();
+			$plugin->getServer()->getScheduler()->scheduleDelayedTask(new class($this, $event->getPlayer()) extends PluginTask{
+				/** @var TransferOnlyModule */
+				private $module;
+				/** @var Player */
+				private $player;
 
-			public function __construct(TransferOnlyModule $module, Player $player){
-				parent::__construct($module->getPlugin());
-				$this->module = $module;
-				$this->player = $player;
-			}
+				public function __construct(TransferOnlyModule $module, Player $player){
+					parent::__construct($module->getPlugin());
+					$this->module = $module;
+					$this->player = $player;
+				}
 
-			public function onRun($currentTick){
-				$this->module->confirmTransferOrKick($this->player);
-			}
-		}, 1);
+				public function onRun($currentTick){
+					$this->module->confirmTransferOrKick($this->player);
+				}
+			}, 1);
+		}
 	}
 
 	public function confirmTransfer(Player $player) : bool{

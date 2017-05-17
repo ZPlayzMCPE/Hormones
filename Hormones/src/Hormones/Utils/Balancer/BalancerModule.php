@@ -18,7 +18,7 @@ namespace Hormones\Utils\Balancer;
 use Hormones\HormonesPlugin;
 use Hormones\Utils\Balancer\Event\PlayerBalancedEvent;
 use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerPreLoginEvent;
+use pocketmine\event\player\PlayerLoginEvent;
 
 class BalancerModule implements Listener{
 	private $plugin;
@@ -27,31 +27,42 @@ class BalancerModule implements Listener{
 
 	public function __construct(HormonesPlugin $plugin){
 		$this->plugin = $plugin;
-		$this->getPlugin()->getServer()->getPluginManager()->registerEvents($this, $plugin);
 		$this->exempts = array_fill_keys(array_map("strtolower", $this->getPlugin()->getConfig()->getNested("balancer.exemptPlayers")), true);
+		if($plugin->getConfig()->getNested("balancer.enabled", true)){
+			$this->getPlugin()->getServer()->getPluginManager()->registerEvents($this, $plugin);
+		}
 	}
 
 	/**
-	 * @param PlayerPreLoginEvent $event
+	 * @param PlayerLoginEvent $event
 	 *
 	 * @priority        HIGH
 	 * @ignoreCancelled true
 	 */
-	public function e_onPreLogin(PlayerPreLoginEvent $event){
+	public function e_onPreLogin(PlayerLoginEvent $event){
 		// We can't check permissions here because permission plugins have not checked it yet
+		var_dump(count($this->getPlugin()->getServer()->getOnlinePlayers()), $this->getPlugin()->getSoftSlotsLimit());
 
 		if(count($this->getPlugin()->getServer()->getOnlinePlayers()) >= $this->getPlugin()->getSoftSlotsLimit()){ // getOnlinePlayers() doesn't include the current player
 			$player = $event->getPlayer();
+			if($this->getPlugin()->getLymphResult()->altServer->address === null){
+				$event->setCancelled();
+				$event->setKickMessage("All {$this->getPlugin()->getOrganName()} servers are full!");
+				return;
+			}
 			$balEv = new PlayerBalancedEvent($this->getPlugin(), $player, $this->getPlugin()->getLymphResult()->altServer);
-			if(in_array(strtolower($player->getName()), $this->exempts)){
+			if(isset($this->exempts[strtolower($player->getName())])){
 				$balEv->setCancelled();
 			}
 			$this->getPlugin()->getServer()->getPluginManager()->callEvent($balEv);
 
 			if(!$balEv->isCancelled()){
+				$this->getPlugin()->getLogger()->info("Transferring {$player->getName()} to alt server: {$balEv->getTargetServer()->displayName}");
 				$player->transfer($balEv->getTargetServer()->address, $balEv->getTargetServer()->port,
 					"Server full! Transferring you to {$balEv->getTargetServer()->displayName}");
 				$event->setCancelled();
+			}else{
+				$this->getPlugin()->getLogger()->debug("Event cancelled");
 			}
 		}
 	}

@@ -19,8 +19,10 @@ use Hormones\Hormone\Hormone;
 use Hormones\HormonesPlugin;
 
 class StopServerHormone extends Hormone{
+	const TYPE = "Hormones.StopServer";
+
 	public function getType() : string{
-		return "Hormones.StopServer";
+		return self::TYPE;
 	}
 
 	public function getData() : array{

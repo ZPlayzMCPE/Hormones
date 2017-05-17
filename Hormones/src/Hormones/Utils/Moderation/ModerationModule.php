@@ -26,7 +26,7 @@ class ModerationModule implements Listener{
 	private $plugin;
 
 	/** @var PenaltySession[][] */
-	private $penaltySessions = [];
+	private $penaltySessions = [PenaltySession::TYPE_BAN => [], PenaltySession::TYPE_MUTE => []];
 
 	public function __construct(HormonesPlugin $plugin){
 		$this->plugin = $plugin;

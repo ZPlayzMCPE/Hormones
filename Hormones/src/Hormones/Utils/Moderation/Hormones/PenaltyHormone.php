@@ -21,6 +21,8 @@ use Hormones\Utils\Moderation\PenaltySession;
 use Hormones\Utils\Moderation\PlayerIdentification;
 
 class PenaltyHormone extends Hormone{
+	const TYPE = "Hormones.Moderation.Penalty";
+
 	public $type;
 	public $name;
 	public $ip;
@@ -28,7 +30,7 @@ class PenaltyHormone extends Hormone{
 	public $source;
 
 	public function getType() : string{
-		return "Hormones.Moderation.Penalty";
+		return PenaltyHormone::TYPE;
 	}
 
 	public function getData() : array{

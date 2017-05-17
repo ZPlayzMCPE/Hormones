@@ -28,14 +28,14 @@ use Hormones\Utils\TransferOnly\DeclareTransferHormone;
 
 abstract class Hormone{
 	public static $knownTypes = [ // I struggled so many times not to rename this to antigen...
-		"Hormones.StopServer" => StopServerHormone::class,
-		"Hormones.VerifyDbVersion" => VerifyDatabaseVersionHormone::class,
-		"Hormones.Moderation.BroadcastMessage" => BroadcastMessageHormone::class,
-		"Hormones.Moderation.Penalty" => PenaltyHormone::class,
-		"Hormones.SingleSession.NotifyJoin" => NotifyJoinHormone::class,
-		"Hormones.SingleSession.PushPlayers" => PushPlayersHormone::class,
-		"Hormones.SingleSession.SpecificBump" => SpecificBumpHormone::class,
-		"Hormones.TransferOnly.DeclareTransfer" => DeclareTransferHormone::class,
+		StopServerHormone::TYPE => StopServerHormone::class,
+		VerifyDatabaseVersionHormone::TYPE => VerifyDatabaseVersionHormone::class,
+		BroadcastMessageHormone::TYPE => BroadcastMessageHormone::class,
+		PenaltyHormone::TYPE => PenaltyHormone::class,
+		NotifyJoinHormone::TYPE => NotifyJoinHormone::class,
+		PushPlayersHormone::TYPE => PushPlayersHormone::class,
+		SpecificBumpHormone::TYPE => SpecificBumpHormone::class,
+		DeclareTransferHormone::TYPE => DeclareTransferHormone::class,
 	];
 
 	private $hormoneId;

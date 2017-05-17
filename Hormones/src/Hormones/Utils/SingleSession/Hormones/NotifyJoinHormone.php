@@ -20,6 +20,8 @@ use Hormones\HormonesPlugin;
 use Hormones\Utils\SingleSession\SingleSessionModule;
 
 class NotifyJoinHormone extends Hormone{
+	const TYPE = "Hormones.SingleSession.NotifyJoin";
+
 	public $username;
 	public $ip;
 	public $tissueId;
@@ -27,7 +29,7 @@ class NotifyJoinHormone extends Hormone{
 	// TODO estimate what happens if servers have different singleSession.mode values
 
 	public function getType() : string{
-		return "Hormones.SingleSession.NotifyJoin";
+		return NotifyJoinHormone::TYPE;
 	}
 
 	public function getData() : array{

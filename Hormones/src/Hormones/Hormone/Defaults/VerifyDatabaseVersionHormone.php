@@ -19,11 +19,12 @@ use Hormones\Hormone\Hormone;
 use Hormones\HormonesPlugin;
 
 class VerifyDatabaseVersionHormone extends Hormone{
+	const TYPE = "Hormones.VerifyDbVersion";
 	public $dbVersion;
 	public $pluginVersion;
 
 	public function getType() : string{
-		return "Hormones.VerifyDbVersion";
+		return VerifyDatabaseVersionHormone::TYPE;
 	}
 
 	public function getData() : array{

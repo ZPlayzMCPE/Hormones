@@ -19,13 +19,15 @@ use Hormones\Hormone\Hormone;
 use Hormones\HormonesPlugin;
 
 class BroadcastMessageHormone extends Hormone{
+	const TYPE = "Hormones.Moderation.BroadcastMessage";
+
 	/** @var string */
 	public $message;
 	/** @var string */
 	public $permissions = "";
 
 	public function getType() : string{
-		return "Hormones.Moderation.BroadcastMessage";
+		return BroadcastMessageHormone::TYPE;
 	}
 
 	public function getData() : array{

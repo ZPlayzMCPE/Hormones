@@ -82,7 +82,7 @@ class LymphVessel extends QueryMysqlTask{
 
 		$result = MysqlResult::executeQuery($mysqli,
 			"SELECT t.tissues, t.online, t.total, t2.ip, t2.port, t2.displayName FROM
-				(SELECT COUNT(*) tissues, IFNULL(SUM(usedSlots), 0) online, IFNULL(SUM(maxSlots), 0) total, MAX(maxSlots - usedSlots) maxAvail
+				(SELECT COUNT(*) tissues, IFNULL(SUM(usedSlots), 0) online, IFNULL(SUM(maxSlots), 0) total, GREATEST(0, MAX(maxSlots - usedSlots)) maxAvail
 						FROM hormones_tissues WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 AND tissueId <> ?) t
 				LEFT JOIN hormones_tissues t2 ON t.maxAvail = t2.maxSlots - t2.usedSlots AND tissueId <> ?
 				WHERE UNIX_TIMESTAMP() - UNIX_TIMESTAMP(t2.lastOnline) < 10

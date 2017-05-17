@@ -19,6 +19,8 @@ use Hormones\Hormone\Hormone;
 use Hormones\HormonesPlugin;
 
 class DeclareTransferHormone extends Hormone{
+	const TYPE = "Hormones.TransferOnly.DeclareTransfer";
+
 	public $username;
 	public $userIp;
 
@@ -26,7 +28,7 @@ class DeclareTransferHormone extends Hormone{
 	public $destPort;
 
 	public function getType() : string{
-		return "Hormones.TransferOnly.DeclareTransfer";
+		return DeclareTransferHormone::TYPE;
 	}
 
 	public function getData() : array{
