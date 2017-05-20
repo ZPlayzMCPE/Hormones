@@ -20,14 +20,15 @@ use Hormones\Utils\Moderation\Commands\BroadcastCommand;
 use Hormones\Utils\Moderation\Commands\PenaltyCommand;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerChatEvent;
+use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerPreLoginEvent;
 
 class ModerationModule implements Listener{
 	/** @var HormonesPlugin */
 	private $plugin;
 
-	/** @var PenaltySession[][] */
-	private $penaltySessions = [PenaltySession::TYPE_BAN => [], PenaltySession::TYPE_MUTE => []];
+	/** @var Penalty[][] */
+	private $penaltyGroups = [Penalty::TYPE_BAN => [], Penalty::TYPE_MUTE => []];
 
 	public function __construct(HormonesPlugin $plugin){
 		$this->plugin = $plugin;
@@ -35,8 +36,8 @@ class ModerationModule implements Listener{
 		$this->plugin->getServer()->getCommandMap()->registerAll("hormones", [
 			new BroadcastCommand($plugin, false),
 			new BroadcastCommand($plugin, true),
-			new PenaltyCommand($plugin, PenaltySession::TYPE_BAN, "nban", "Ban"),
-			new PenaltyCommand($plugin, PenaltySession::TYPE_MUTE, "nmute", "Mute"),
+			new PenaltyCommand($plugin, Penalty::TYPE_BAN, "nban", "Ban"),
+			new PenaltyCommand($plugin, Penalty::TYPE_MUTE, "nmute", "Mute"),
 		]);
 	}
 
@@ -47,13 +48,13 @@ class ModerationModule implements Listener{
 	 * @ignoreCancelled true
 	 */
 	public function e_onChat(PlayerChatEvent $event){
-		foreach($this->penaltySessions[PenaltySession::TYPE_MUTE] as $k => $muteSession){
-			if($muteSession->hasExpired()){
-				unset($this->penaltySessions[PenaltySession::TYPE_MUTE][$k]);
-			}
-			if($muteSession->target->matchesPlayer($event->getPlayer())){
+		foreach($this->penaltyGroups[Penalty::TYPE_MUTE] as $k => $penalty){
+			if($penalty->hasExpired()){
+				unset($this->penaltyGroups[Penalty::TYPE_MUTE][$k]);
+			}elseif($penalty->target->matchesPlayer($event->getPlayer())){
 				$event->setCancelled();
-				$event->getPlayer()->sendMessage($muteSession->getNotifyMessage());
+				$event->getPlayer()->sendMessage($penalty->getNotifyMessage());
+				break;
 			}
 		}
 	}
@@ -65,18 +66,30 @@ class ModerationModule implements Listener{
 	 * @ignoreCancelled true
 	 */
 	public function e_onPreLogin(PlayerPreLoginEvent $event){
-		foreach($this->penaltySessions[PenaltySession::TYPE_BAN] as $k => $banSession){
-			if($banSession->hasExpired()){
-				unset($this->penaltySessions[PenaltySession::TYPE_BAN][$k]);
-			}
-			if($banSession->target->matchesPlayer($event->getPlayer())){
+		foreach($this->penaltyGroups[Penalty::TYPE_BAN] as $k => $penalty){
+			if($penalty->hasExpired()){
+				unset($this->penaltyGroups[Penalty::TYPE_BAN][$k]);
+			}elseif($penalty->target->matchesPlayer($event->getPlayer())){
 				$event->setCancelled();
-				$event->setKickMessage($banSession->getNotifyMessage());
+				$event->setKickMessage($penalty->getNotifyMessage());
+				break;
 			}
 		}
 	}
 
-	public function addPenaltySession(PenaltySession $session){
-		$this->penaltySessions[$session->type][spl_object_hash($session)] = $session;
+	public function e_onJoin(PlayerJoinEvent $event){
+		foreach($this->penaltyGroups as $type => $penalties){
+			foreach($penalties as $k => $penalty){
+				if($penalty->hasExpired()){
+					unset($this->penaltyGroups[$type][$k]);
+				}elseif($penalty->target->matchesPlayer($event->getPlayer())){
+					$event->getPlayer()->sendMessage($penalty->getNotifyMessage());
+				}
+			}
+		}
+	}
+
+	public function addPenaltySession(Penalty $session){
+		$this->penaltyGroups[$session->type][spl_object_hash($session)] = $session;
 	}
 }

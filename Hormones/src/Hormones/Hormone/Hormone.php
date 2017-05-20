@@ -20,6 +20,7 @@ use Hormones\Hormone\Defaults\StopServerHormone;
 use Hormones\Hormone\Defaults\VerifyDatabaseVersionHormone;
 use Hormones\HormonesPlugin;
 use Hormones\Utils\Moderation\Hormones\BroadcastMessageHormone;
+use Hormones\Utils\Moderation\Hormones\KickPlayerHormone;
 use Hormones\Utils\Moderation\Hormones\PenaltyHormone;
 use Hormones\Utils\SingleSession\Hormones\NotifyJoinHormone;
 use Hormones\Utils\SingleSession\Hormones\PushPlayersHormone;
@@ -36,6 +37,7 @@ abstract class Hormone{
 		PushPlayersHormone::TYPE => PushPlayersHormone::class,
 		SpecificBumpHormone::TYPE => SpecificBumpHormone::class,
 		DeclareTransferHormone::TYPE => DeclareTransferHormone::class,
+		KickPlayerHormone::TYPE => KickPlayerHormone::class
 	];
 
 	private $hormoneId;
@@ -80,7 +82,7 @@ abstract class Hormone{
 	/**
 	 * Internal constructor. Subclasses MUST call this method.
 	 *
-	 * @param string|null $receptors the bitmask for oragns to handle this hormone
+	 * @param string|null $receptors the bitmask for organs to handle this hormone
 	 * @param int         $lifetime  number of seconds that this hormone should persist.
 	 */
 	public function __construct(string $receptors = null, int $lifetime = 0){

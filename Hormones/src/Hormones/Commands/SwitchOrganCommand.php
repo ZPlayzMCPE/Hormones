@@ -15,7 +15,6 @@
 
 namespace Hormones\Commands;
 
-use Hormones\HormonesCommand;
 use Hormones\HormonesPlugin;
 use libasynql\result\MysqlErrorResult;
 use libasynql\result\MysqlResult;
@@ -27,30 +26,63 @@ use pocketmine\Player;
 class SwitchOrganCommand extends HormonesCommand{
 	private $organId;
 	private $organName;
+	private $organData;
 
 	public static function registerOrganicStuff(HormonesPlugin $plugin){
 		$mysqli = $plugin->getCredentials()->newMysqli();
+
+		$mode = $plugin->getConfig()->getNested("organicTransfer.mode", "group");
+		if($mode === "off"){
+			return;
+		}elseif($mode === "group"){
+			$modeGroup = true;
+		}elseif($mode === "direct"){
+			$modeGroup = false;
+		}else{
+			$plugin->getLogger()->error("Unknown organicTransfer.mode '$mode', using default value 'group'");
+			$modeGroup = true;
+		}
+
 		$result = MysqlResult::executeQuery($mysqli, "SELECT organId, name FROM hormones_organs", []);
 		$mysqli->close();
 		if(!($result instanceof MysqlSelectResult)){
 			assert($result instanceof MysqlErrorResult);
 			throw $result->getException();
 		}
-		$parent = $plugin->getServer()->getPluginManager()->getPermission("hormones.transfer.organic");
-		foreach($result->rows as $row){
-			$organId = (int) $row["organId"];
-			if($organId === $plugin->getOrganId()){
-				continue;
+		$result->fixTypes([
+			"organId" => MysqlSelectResult::TYPE_INT,
+			"name" => MysqlSelectResult::TYPE_STRING,
+		]);
+
+		$parentPerm = $plugin->getServer()->getPluginManager()->getPermission("hormones.player.transfer.organic");
+		if($modeGroup){
+			$cmd = new SwitchOrganCommand($plugin, "organic-transfer", "Transfer to a server in another organ", "/ot <organ name>", ["ot"]);
+			$cmd->setPermission($parentPerm->getName());
+			$cmd->organData = [];
+			foreach($result->rows as $row){
+				$organId = $row["organId"];
+				if($organId === $plugin->getOrganId()){
+					continue;
+				}
+				$cmd->organData[strtolower($row["name"])] = $organId;
 			}
-			$organName = $row["name"];
-			$perm = new Permission("hormones.transfer.organic.$organName", "Allows transferring to \"$organName\" servers", Permission::DEFAULT_TRUE);
-			$parent->getChildren()[$perm->getName()] = true;
-			$plugin->getServer()->getPluginManager()->addPermission($perm);
-			$cmd = new SwitchOrganCommand($plugin, $organName, "Transfer to a $organName server", "/$organName");
-			$cmd->setPermission($perm->getName());
-			$cmd->organId = $organId;
-			$cmd->organName = $organName;
-			$plugin->getServer()->getCommandMap()->register("organ", $cmd);
+			$plugin->getServer()->getCommandMap()->register("hormones", $cmd);
+		}else{
+			foreach($result->rows as $row){
+				$organId = $row["organId"];
+				if($organId === $plugin->getOrganId()){
+					continue;
+				}
+				$organName = $row["name"];
+				$perm = new Permission("hormones.player.transfer.organic.$organName", "Allows transferring to \"$organName\" servers", Permission::DEFAULT_TRUE);
+				$parentPerm->getChildren()[$perm->getName()] = true;
+				$plugin->getServer()->getPluginManager()->addPermission($perm);
+				$cmd = new SwitchOrganCommand($plugin, $organName, "Transfer to a $organName server", "/$organName");
+				$cmd->setPermission($perm->getName());
+				$cmd->organId = $organId;
+				$cmd->organName = $organName;
+				$plugin->getServer()->getCommandMap()->register("organ", $cmd);
+			}
 		}
 	}
 
@@ -62,7 +94,27 @@ class SwitchOrganCommand extends HormonesCommand{
 			$sender->sendMessage("Please run this command as a player");
 			return false;
 		}
-		$sender->getServer()->getScheduler()->scheduleAsyncTask(new FindOrganicTissueTask($this->getPlugin()->getCredentials(), $sender, $this->organId, $this->organName));
+
+		if(isset($this->organId, $this->organName)){
+			$organId = $this->organId;
+			$organName = $this->organName;
+		}else{
+			// this is the /ot command
+			if(!isset($args[0])){
+				$sender->sendMessage("Usage: /ot <organ name>");
+				$sender->sendMessage("Available organ names: " . implode(", ", array_keys($this->organData)));
+				return false;
+			}
+			$organName = strtolower($args[0]);
+			if(!isset($organName)){
+				$sender->sendMessage("Unknown organ name: $args[0]");
+				$sender->sendMessage("Available organ names: " . implode(", ", array_keys($this->organData)));
+				return false;
+			}
+			$organId = $this->organData[$organName];
+		}
+
+		$sender->getServer()->getScheduler()->scheduleAsyncTask(new FindOrganicTissueTask($this->getPlugin()->getCredentials(), $sender, $organId, $organName));
 		return true;
 	}
 }

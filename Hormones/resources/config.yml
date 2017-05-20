@@ -38,8 +38,12 @@ kidney:
 
 # Commands named after the organs that users can use to transfer to the most empty server of that tissue
 # They will have permission nodes
-oragnicTransfer:
-  enabled: true
+organicTransfer:
+  # How organic-transfer commands should be registered. Possible values:
+  #     off: No organic-transfer commands should be registered.
+  #     direct: Organ name as command name, e.g. to transfer to servers in the "normal" organ, there is a /normal command
+  #     group: Organ name as parameter for /organic-transfer (/ot), e.g. to transfer to servers in the "normal" organ, use "/ot normal"
+  mode: group
 
 balancer:
   # This will only prevent transferring players to other tissues. Other tissues of the same organ ID may still transfer players to this tissue.

@@ -15,22 +15,15 @@
 
 namespace Hormones\Commands;
 
-use Hormones\Hormone\Defaults\StopServerHormone;
 use Hormones\HormonesPlugin;
 use pocketmine\command\CommandSender;
 
-class StopNetworkCommand extends HormonesCommand{
+class TissuesCommand extends HormonesCommand{
 	public function __construct(HormonesPlugin $plugin){
-		parent::__construct($plugin, "stop-all", "Stop all currently-online servers in the network (may automatically restart)", "/nstop", ["nstop"]);
-		$this->setPermission("hormones.admin.stop");
+		parent::__construct($plugin, "tissues", "See all online servers", "/servers", ["servers"]);
 	}
 
 	public function execute(CommandSender $sender, $commandLabel, array $args){
-		if(!$this->testPermission($sender)){
-			return false;
-		}
-		$hormone = new StopServerHormone();
-		$hormone->release($this->getPlugin());
-		return true;
+		$this->getPlugin()->getServer()->getScheduler()->scheduleAsyncTask(new TissueListTask($this->getPlugin(), $sender));
 	}
 }

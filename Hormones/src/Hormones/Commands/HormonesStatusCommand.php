@@ -15,7 +15,6 @@
 
 namespace Hormones\Commands;
 
-use Hormones\HormonesCommand;
 use Hormones\HormonesPlugin;
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
@@ -48,7 +47,7 @@ class HormonesStatusCommand extends HormonesCommand{
 			"Artery cycle time (s)" => $timers->arteryCycle->evalAverage(),
 			"Lymph net time (s)" => $timers->lymphNet->evalAverage(),
 			"Lymph cycle time (s)" => $timers->lymphCycle->evalAverage(),
-			"Last arterial hromone ID" => $this->getPlugin()->getLastArterialHormoneId()
+			"Last arterial hormone ID" => $this->getPlugin()->getLastArterialHormoneId()
 		];
 		foreach($entries as $name => $value){
 			$sender->sendMessage(TextFormat::GOLD . $name . ": " . TextFormat::RED . $value);

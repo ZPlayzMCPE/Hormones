@@ -19,5 +19,5 @@ projects:
 
     libs:
       - src: poggit/libasynql/libasynql
-        version: ~1.2
+        version: ^1.3
 ...

@@ -76,7 +76,7 @@ class Artery extends QueryMysqlTask{
 		if(!$plugin->isEnabled()){
 			return;
 		}
-		$lastHormoneId = $this->hormonesAfter === Artery::STARTUP_ID ? $this->virtualMax : $this->hormonesAfter;
+		$lastHormoneId = $this->hormonesAfter;
 		if($this->normal){
 			$result = $this->getResult();
 			if(!$plugin->isEnabled()){
@@ -101,6 +101,9 @@ class Artery extends QueryMysqlTask{
 				$plugin->onArteryDiastole();
 				$plugin->getTimers()->arteryNet->addDatum($result->getTiming());
 			}
+		}
+		if($this->hormonesAfter === Artery::STARTUP_ID){
+			$lastHormoneId = $this->virtualMax;
 		}
 		$plugin->getTimers()->arteryCycle->addDatum(microtime(true) - $this->objectCreated);
 		$plugin->setLastArterialHormoneId($lastHormoneId);

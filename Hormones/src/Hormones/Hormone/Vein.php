@@ -32,7 +32,7 @@ class Vein extends QueryMysqlTask{
 			"type" => $hormone->getType(),
 			"receptors" => $hormone->getReceptors(),
 			"creationTime" => $hormone->getCreationTime(),
-			"expiryTime" => $hormone->getCreationTime(),
+			"expiryTime" => $hormone->getExpiryTime(),
 			"data" => $hormone->getData()
 		]);
 	}

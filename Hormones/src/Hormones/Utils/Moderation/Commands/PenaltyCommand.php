@@ -15,11 +15,11 @@
 
 namespace Hormones\Utils\Moderation\Commands;
 
-use Hormones\HormonesCommand;
+use Hormones\Commands\HormonesCommand;
 use Hormones\HormonesPlugin;
 use Hormones\Utils\Moderation\Hormones\KickPlayerHormone;
 use Hormones\Utils\Moderation\Hormones\PenaltyHormone;
-use Hormones\Utils\Moderation\PenaltySession;
+use Hormones\Utils\Moderation\Penalty;
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
 
@@ -27,7 +27,7 @@ class PenaltyCommand extends HormonesCommand{
 	private $type;
 
 	public function __construct(HormonesPlugin $plugin, string $type, string $name, string $verb){
-		parent::__construct($plugin, $name, "$verb a player", "/$name <player> <length> <message ...>");
+		parent::__construct($plugin, $name, "$verb a player", "/$name <player> <duration> <message ...>");
 		$this->type = $type;
 		$this->setPermission("hormones.moderation.moderator.sectional.{$this->type};hormones.moderation.moderator.global.{$this->type}");
 	}
@@ -69,13 +69,14 @@ class PenaltyCommand extends HormonesCommand{
 		$hormone->source = $sender->getName();
 		$hormone->release($this->getPlugin());
 
-		$sender->sendMessage($hormone->toPenaltySession()->getNotifyMessage(false));
+		$penalty = $hormone->toPenalty();
+		$sender->sendMessage($penalty->getNotifyMessage(false));
 
-		if($this->type === PenaltySession::TYPE_BAN){
+		if($this->type === Penalty::TYPE_BAN){
 			$hormone = new KickPlayerHormone($organMask);
 			$hormone->playerName = $target->getName();
 			$hormone->ip = $target->getAddress();
-			$hormone->message = "Banned by {$sender->getName()}: " . $message;
+			$hormone->message = $penalty->getNotifyMessage();
 			$hormone->release($this->getPlugin());
 		}
 

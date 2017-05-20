@@ -17,7 +17,7 @@ namespace Hormones\Utils\Moderation\Hormones;
 
 use Hormones\Hormone\Hormone;
 use Hormones\HormonesPlugin;
-use Hormones\Utils\Moderation\PenaltySession;
+use Hormones\Utils\Moderation\Penalty;
 use Hormones\Utils\Moderation\PlayerIdentification;
 
 class PenaltyHormone extends Hormone{
@@ -46,10 +46,15 @@ class PenaltyHormone extends Hormone{
 	public function respond(array $args){
 		/** @var HormonesPlugin $plugin */
 		list($plugin) = $args;
-		$plugin->getModerationModule()->addPenaltySession($this->toPenaltySession());
+		$plugin->getModerationModule()->addPenaltySession($penalty = $this->toPenalty());
+		foreach($plugin->getServer()->getOnlinePlayers() as $player){
+			if($penalty->target->matchesPlayer($player)){
+				$player->sendMessage($penalty->getNotifyMessage());
+			}
+		}
 	}
 
-	public function toPenaltySession() : PenaltySession{
-		return new PenaltySession($this->type, new PlayerIdentification($this->name, $this->ip), $this->message, $this->source, $this->getCreationTime(), $this->getExpiryTime());
+	public function toPenalty() : Penalty{
+		return new Penalty($this->type, new PlayerIdentification($this->name, $this->ip), $this->message, $this->source, $this->getCreationTime(), $this->getExpiryTime());
 	}
 }

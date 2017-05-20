@@ -13,8 +13,9 @@
  *
 */
 
-namespace Hormones;
+namespace Hormones\Commands;
 
+use Hormones\HormonesPlugin;
 use pocketmine\command\Command;
 use pocketmine\command\PluginIdentifiableCommand;
 
@@ -37,9 +38,9 @@ abstract class HormonesCommand extends Command implements PluginIdentifiableComm
 		$lastInt = true;
 		for($i = 0; $i < strlen($input); $i++){
 			$ord = ord($input{$i});
-			if(ord("0") <= $ord and $ord <= chr("9")){
+			if(ord("0") <= $ord and $ord <= ord("9") || $input{$i} === "."){
 				$isInt = true;
-			}elseif(ord("a") <= $ord and $ord <= chr("z")){
+			}elseif(ord("a") <= $ord and $ord <= ord("z")){
 				$isInt = false;
 			}else{
 				continue;
@@ -47,17 +48,22 @@ abstract class HormonesCommand extends Command implements PluginIdentifiableComm
 			if(!$lastInt and $isInt){
 				$duplets[] = $duplet;
 				$duplet = ["", ""];
+			}elseif($lastInt and !$isInt and $duplet[0] === ""){
+				assert(count($duplets) === 0); // the first call
+				$duplet[0] = "1";
 			}
 			$duplet[$isInt ? 0 : 1] .= $input{$i};
 			$lastInt = $isInt;
 		}
-		if($duplet !== ["", ""]){
-			throw new \InvalidArgumentException("Incomplete time input");
+		if($duplet[1] === ""){
+			throw new \InvalidArgumentException("The last group does not contain a unit");
 		}
+		$duplets[] = $duplet;
 
 		$units = [
-			"millennium" => 86400 * 365242, // don't ask me why. some judges have a strange sense of favour of imprisoning people for 300 years rather than life imprisonment.
 			// Figures from https://pumas.nasa.gov/files/04_21_97_1.pdf
+			"millennium" => 86400 * 365242, // don't ask me why. some judges have a strange sense of favour of imprisoning people for 300 years rather than life imprisonment.
+			"mm" => 86400 * 365242,
 			"century" => 86400 * 36524,
 			"decade" => 86400 * 3652,
 			"y" => 86400 * 365,
@@ -84,6 +90,7 @@ abstract class HormonesCommand extends Command implements PluginIdentifiableComm
 
 		$secs = 0;
 		foreach($duplets as list($coef, $unit)){
+			$coef = (float) $coef;
 			if($unit !== "s" and substr($unit, 0, -1) === "s"){
 				$unit = substr($unit, 0, -1);
 			}

@@ -15,10 +15,11 @@
 
 namespace Hormones\Utils\Moderation\Commands;
 
-use Hormones\HormonesCommand;
+use Hormones\Commands\HormonesCommand;
 use Hormones\HormonesPlugin;
 use Hormones\Utils\Moderation\Hormones\BroadcastMessageHormone;
 use pocketmine\command\CommandSender;
+use pocketmine\utils\TextFormat;
 
 class BroadcastCommand extends HormonesCommand{
 	/** @var bool */
@@ -47,7 +48,7 @@ class BroadcastCommand extends HormonesCommand{
 		}
 
 		$hormone = new BroadcastMessageHormone($this->global ? str_repeat("\xFF", 8) : HormonesPlugin::setNthBit($this->getPlugin()->getOrganId(), 8));
-		$hormone->message = implode(" ", $args);
+		$hormone->message = TextFormat::LIGHT_PURPLE . "[Server] " . implode(" ", $args);
 		$hormone->permissions = $permissions;
 		$hormone->release($this->getPlugin());
 

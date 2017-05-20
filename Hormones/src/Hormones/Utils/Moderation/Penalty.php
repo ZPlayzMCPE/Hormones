@@ -15,15 +15,19 @@
 
 namespace Hormones\Utils\Moderation;
 
-use Hormones\HormonesCommand;
+use Hormones\Commands\HormonesCommand;
 use pocketmine\utils\TextFormat;
 
-class PenaltySession{
+class Penalty{
 	const TYPE_MUTE = "mute";
 	const TYPE_BAN = "ban";
 	private static $PAST_PARTICIPLE = [
-		PenaltySession::TYPE_MUTE => "muted",
-		PenaltySession::TYPE_BAN => "banned",
+		Penalty::TYPE_MUTE => "muted",
+		Penalty::TYPE_BAN => "banned",
+	];
+	private static $DISALLOWED = [
+		Penalty::TYPE_MUTE => "chat",
+		Penalty::TYPE_BAN => "join",
 	];
 
 	/** @var string */
@@ -40,6 +44,7 @@ class PenaltySession{
 	public $till;
 
 	public function __construct(string $type, PlayerIdentification $target, string $message, string $source, int $since, int $till){
+		$this->type = $type;
 		$this->target = $target;
 		$this->message = $message;
 		$this->source = $source;
@@ -47,17 +52,25 @@ class PenaltySession{
 		$this->till = $till;
 	}
 
-	public function getNotifyMessage(bool $me = true) : bool{
+	public function getNotifyMessage(bool $me = true) : string{
 		return TextFormat::YELLOW . sprintf(
-				"%s have been %s by %s for %s. You have to wait for %s more before you can chat.",
+				'%s have been %s by %s for %s: "%s". %s have to wait for %s more before %s can %s.',
 				$me ? "You" : ($this->target->name . " @ " . $this->target->ip),
-				PenaltySession::$PAST_PARTICIPLE[$this->type],
+				Penalty::$PAST_PARTICIPLE[$this->type],
 				$this->source,
 				HormonesCommand::ui_secsToPresent($this->till - $this->since),
-				HormonesCommand::ui_secsToPresent($this->till - time()));
+				$this->message,
+				$me ? "You" : "He/She",
+				HormonesCommand::ui_secsToPresent($this->till - time()),
+				$me ? "you" : "he/she",
+				Penalty::$DISALLOWED[$this->type]);
 	}
 
-	public function hasExpired() : int{
-		return time() > $this->till;
+	public function hasExpired() : bool{
+		return $this->till - time() < 0;
+	}
+
+	public function __toString() : string{
+		return json_encode($this);
 	}
 }

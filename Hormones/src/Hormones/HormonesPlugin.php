@@ -18,6 +18,7 @@ namespace Hormones;
 use Hormones\Commands\HormonesStatusCommand;
 use Hormones\Commands\StopNetworkCommand;
 use Hormones\Commands\SwitchOrganCommand;
+use Hormones\Commands\TissuesCommand;
 use Hormones\Hormone\Artery;
 use Hormones\Hormone\Kidney;
 use Hormones\Lymph\LymphResult;
@@ -27,6 +28,7 @@ use Hormones\Utils\Balancer\BalancerModule;
 use Hormones\Utils\Moderation\ModerationModule;
 use Hormones\Utils\SingleSession\SingleSessionModule;
 use Hormones\Utils\TransferOnly\TransferOnlyModule;
+use libasynql\ClearMysqlTask;
 use libasynql\DirectQueryMysqlTask;
 use libasynql\MysqlCredentials;
 use pocketmine\command\ConsoleCommandSender;
@@ -152,6 +154,7 @@ class HormonesPlugin extends PluginBase{
 		}
 		$this->getServer()->getCommandMap()->register("hormones", new StopNetworkCommand($this));
 		$this->getServer()->getCommandMap()->register("hormones", new HormonesStatusCommand($this));
+		$this->getServer()->getCommandMap()->register("hormones", new TissuesCommand($this));
 
 		$this->timers = new TimerSet;
 
@@ -160,6 +163,10 @@ class HormonesPlugin extends PluginBase{
 		$this->moderationModule = new ModerationModule($this);
 		$this->singleSessionModule = new SingleSessionModule($this);
 		$this->transferOnlyModule = new TransferOnlyModule($this);
+	}
+
+	public function onDisable(){
+		ClearMysqlTask::closeAll($this, $this->getCredentials());
 	}
 
 	public function getConfig() : Config{
@@ -209,6 +216,14 @@ class HormonesPlugin extends PluginBase{
 
 	public function setLymphResult(LymphResult $lymphResult){
 		$this->lymphResult = $lymphResult;
+	}
+
+	public function setLastArterialHormoneId(int $lastArterialHormoneId){
+		$this->lastArterialHormoneId = $lastArterialHormoneId;
+	}
+
+	public function getLastArterialHormoneId() : int{
+		return $this->lastArterialHormoneId;
 	}
 
 	public function addDiastoleListener(callable $callable){
@@ -282,13 +297,5 @@ class HormonesPlugin extends PluginBase{
 			}
 		}
 		return false;
-	}
-
-	public function setLastArterialHormoneId(int $lastArterialHormoneId){
-		$this->lastArterialHormoneId = $lastArterialHormoneId;
-	}
-
-	public function getLastArterialHormoneId() : int{
-		return $this->lastArterialHormoneId;
 	}
 }

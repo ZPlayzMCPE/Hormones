@@ -19,12 +19,13 @@ use Hormones\Hormone\Hormone;
 use Hormones\HormonesPlugin;
 
 class KickPlayerHormone extends Hormone{
+	const TYPE = "Hormones.Moderation.KickPlayer";
 	public $playerName;
 	public $ip;
 	public $message;
 
 	public function getType() : string{
-		return "Hormones.Moderation.KickPlayer";
+		return KickPlayerHormone::TYPE;
 	}
 
 	public function getData() : array{
