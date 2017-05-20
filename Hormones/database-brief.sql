@@ -7,7 +7,7 @@ INSERT INTO hormones_metadata (name, val) VALUES ('version', $version);
 CREATE TABLE IF NOT EXISTS hormones_organs (
 	organId TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
 	name VARCHAR(64) UNIQUE
-);
+) AUTO_INCREMENT = 0;
 DELIMITER $$
 CREATE TRIGGER organs_organId_limit BEFORE INSERT ON hormones_organs FOR EACH ROW
 BEGIN

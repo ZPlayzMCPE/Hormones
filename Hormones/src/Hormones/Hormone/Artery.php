@@ -46,18 +46,18 @@ class Artery extends QueryMysqlTask{
 			return;
 		}
 
-		$bitmask = bin2hex(HormonesPlugin::setNthBitSmallEndian($this->organId, 8));
+		$bitmask = HormonesPlugin::setNthBit($this->organId, 8);
 		if($this->hormonesAfter !== Artery::STARTUP_ID){
 			$after = "hormoneId > ?";
-			$args = [["i", $this->hormonesAfter], ["s", $bitmask]];
+			$args = [["i", $this->hormonesAfter], ["s", bin2hex($bitmask)]];
 		}else{
 			$after = "UNIX_TIMESTAMP(expiry) > UNIX_TIMESTAMP()";
-			$args = [["s", $bitmask]];
+			$args = [["s", bin2hex($bitmask)]];
 		}
 
 		$this->setResult(MysqlResult::executeQuery($db = $this->getMysqli(), $query = "
 			SELECT hormoneId, type, receptors, UNIX_TIMESTAMP(creation) creationTime, UNIX_TIMESTAMP(expiry) expiryTime, json
-				FROM hormones_blood WHERE $after AND ((receptors & HEX(?)) > 0)",
+				FROM hormones_blood WHERE $after AND ((receptors & CONV(?, 16, 10)) > 0)",
 			$args));
 
 		if($this->hormonesAfter === Artery::STARTUP_ID){

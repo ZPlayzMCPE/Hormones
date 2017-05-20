@@ -98,11 +98,11 @@ abstract class Hormone{
 	}
 
 	protected function enableOrgan(int $organId){
-		$this->hormoneReceptors |= HormonesPlugin::setNthBitSmallEndian($organId, 8);
+		$this->hormoneReceptors |= HormonesPlugin::setNthBit($organId, 8);
 	}
 
 	protected function disableOrgan(int $organId){
-		$this->hormoneReceptors &= ~HormonesPlugin::setNthBitSmallEndian($organId, 8);
+		$this->hormoneReceptors &= ~HormonesPlugin::setNthBit($organId, 8);
 	}
 
 	public abstract function getType() : string;

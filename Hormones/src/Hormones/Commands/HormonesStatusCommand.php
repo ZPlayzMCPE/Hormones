@@ -31,17 +31,29 @@ class HormonesStatusCommand extends HormonesCommand{
 			return false;
 		}
 
-		$sender->sendMessage("Using {$this->getPlugin()->getName()} v{$this->getPlugin()->getDescription()->getVersion()} by " . implode(", ", $this->getPlugin()->getDescription()->getAuthors()));
+		$sender->sendMessage(TextFormat::GREEN . "Using {$this->getPlugin()->getName()} v{$this->getPlugin()->getDescription()->getVersion()} by " . implode(", ", $this->getPlugin()->getDescription()->getAuthors()));
+		$sender->sendMessage(sprintf('%1$sYou are on a %2$s%3$s %1$sserver: %2$s%4$s %1$s(%2$s%5$s:%6$d%1$s)', TextFormat::GOLD, TextFormat::RED,
+			$this->getPlugin()->getOrganName(), $this->getPlugin()->getServerDisplayName(),
+			$this->getPlugin()->getVisibleAddress(), $this->getPlugin()->getServer()->getPort()));
 		$timers = $this->getPlugin()->getTimers();
 		$lymphResult = $this->getPlugin()->getLymphResult();
-		$sender->sendMessage("Organic slots: " . TextFormat::AQUA . "{$lymphResult->onlineSlots} / {$lymphResult->totalSlots} in {$lymphResult->tissueCount} tissues");
-		$sender->sendMessage("Recommended alt server: " . TextFormat::AQUA . "{$lymphResult->altServer->displayName} ({$lymphResult->altServer->address}:{$lymphResult->altServer->port})");
-		$sender->sendMessage("Vein up time (s): " . TextFormat::AQUA . $timers->veinUp->evalAverage());
-		$sender->sendMessage("Artery net time (s): " . TextFormat::AQUA . $timers->arteryNet->evalAverage());
-		$sender->sendMessage("Artery cycle time (s): " . TextFormat::AQUA . $timers->arteryCycle->evalAverage());
-		$sender->sendMessage("Lymph net time (s): " . TextFormat::AQUA . $timers->lymphNet->evalAverage());
-		$sender->sendMessage("Lymph cycle time (s): " . TextFormat::AQUA . $timers->lymphCycle->evalAverage());
-		$sender->sendMessage("Last arterial hormone ID: " . TextFormat::AQUA . $this->getPlugin()->getLastArterialHormoneId());
+
+		$entries = [
+			"Organic status" => "{$lymphResult->organicOnlineSlots} / {$lymphResult->organicTotalSlots} in {$lymphResult->organicTissueCount} servers",
+			"Network status" => "{$lymphResult->networkOnlineSlots} / {$lymphResult->networkTotalSlots} in {$lymphResult->networkTissueCount} servers",
+			"Recommended alt server" => $lymphResult->altServer === null ? "N/A" :
+				"{$lymphResult->altServer->displayName} ({$lymphResult->altServer->address}:{$lymphResult->altServer->port})",
+			"Vein up time (s)" => $timers->veinUp->evalAverage(),
+			"Artery net time (s)" => $timers->arteryNet->evalAverage(),
+			"Artery cycle time (s)" => $timers->arteryCycle->evalAverage(),
+			"Lymph net time (s)" => $timers->lymphNet->evalAverage(),
+			"Lymph cycle time (s)" => $timers->lymphCycle->evalAverage(),
+			"Last arterial hromone ID" => $this->getPlugin()->getLastArterialHormoneId()
+		];
+		foreach($entries as $name => $value){
+			$sender->sendMessage(TextFormat::GOLD . $name . ": " . TextFormat::RED . $value);
+		}
+
 		return true;
 	}
 }

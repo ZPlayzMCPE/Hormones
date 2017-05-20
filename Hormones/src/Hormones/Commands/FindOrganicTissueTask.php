@@ -40,7 +40,7 @@ class FindOrganicTissueTask extends QueryMysqlTask{
 		$this->setResult(MysqlResult::executeQuery($this->getMysqli(), "SELECT ip, port, displayName FROM hormones_tissues
 				WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 5 AND maxSlots > usedSlots
 				ORDER BY (maxSlots - usedSlots) DESC, maxSlots ASC LIMIT 1",
-			[["i" => $this->organId]]));
+			[["i", $this->organId]]));
 	}
 
 	public function onCompletion(Server $server){

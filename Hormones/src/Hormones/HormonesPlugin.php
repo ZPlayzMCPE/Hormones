@@ -57,7 +57,7 @@ class HormonesPlugin extends PluginBase{
 	/** @var string */
 	private $visibleAddress;
 	/** @var string */
-	private $displayName;
+	private $serverDisplayName;
 
 	private $lymphResult;
 
@@ -115,9 +115,9 @@ class HormonesPlugin extends PluginBase{
 		}elseif(HormonesPlugin::reserved_ip($this->visibleAddress)){
 			$this->getLogger()->notice("The server visible address is set to $this->visibleAddress, which is an internal IP. Players may not be able to transfer to this server if you don't change it to an external IP.");
 		}
-		$this->displayName = $this->getConfig()->getNested("localize.name", "auto");
-		if($this->displayName === "auto"){
-			$this->displayName = $this->visibleAddress . ":" . $this->getServer()->getPort();
+		$this->serverDisplayName = $this->getConfig()->getNested("localize.name", "auto");
+		if($this->serverDisplayName === "auto"){
+			$this->serverDisplayName = $this->visibleAddress . ":" . $this->getServer()->getPort();
 		}
 
 		$this->getLogger()->debug("Scheduling tasks...");
@@ -190,8 +190,8 @@ class HormonesPlugin extends PluginBase{
 		return $this->visibleAddress;
 	}
 
-	public function getDisplayName() : string{
-		return $this->displayName;
+	public function getServerDisplayName() : string{
+		return $this->serverDisplayName;
 	}
 
 	public function getCredentials() : MysqlCredentials{
@@ -245,10 +245,10 @@ class HormonesPlugin extends PluginBase{
 	}
 
 
-	public static function setNthBitSmallEndian(int $n, int $bytes = 8){
+	public static function setNthBit(int $n, int $bytes = 8) : string{
 		$offset = $n >> 3;
 		$byteArray = str_repeat("\0", $bytes);
-		$byteArray{$offset} = chr(1 << ($n & 7));
+		$byteArray{$bytes - 1 - $offset} = chr(1 << ($n & 7));
 		return $byteArray;
 	}
 

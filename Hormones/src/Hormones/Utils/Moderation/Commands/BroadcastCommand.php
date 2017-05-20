@@ -46,7 +46,7 @@ class BroadcastCommand extends HormonesCommand{
 			return false;
 		}
 
-		$hormone = new BroadcastMessageHormone($this->global ? str_repeat("\xFF", 8) : HormonesPlugin::setNthBitSmallEndian($this->getPlugin()->getOrganId(), 8));
+		$hormone = new BroadcastMessageHormone($this->global ? str_repeat("\xFF", 8) : HormonesPlugin::setNthBit($this->getPlugin()->getOrganId(), 8));
 		$hormone->message = implode(" ", $args);
 		$hormone->permissions = $permissions;
 		$hormone->release($this->getPlugin());

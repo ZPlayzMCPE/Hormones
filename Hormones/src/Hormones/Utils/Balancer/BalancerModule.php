@@ -41,11 +41,10 @@ class BalancerModule implements Listener{
 	 */
 	public function e_onPreLogin(PlayerLoginEvent $event){
 		// We can't check permissions here because permission plugins have not checked it yet
-		var_dump(count($this->getPlugin()->getServer()->getOnlinePlayers()), $this->getPlugin()->getSoftSlotsLimit());
 
 		if(count($this->getPlugin()->getServer()->getOnlinePlayers()) >= $this->getPlugin()->getSoftSlotsLimit()){ // getOnlinePlayers() doesn't include the current player
 			$player = $event->getPlayer();
-			if($this->getPlugin()->getLymphResult()->altServer->address === null){
+			if($this->getPlugin()->getLymphResult()->altServer === null){
 				$event->setCancelled();
 				$event->setKickMessage("All {$this->getPlugin()->getOrganName()} servers are full!");
 				return;

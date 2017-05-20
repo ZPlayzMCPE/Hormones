@@ -31,7 +31,10 @@ class BroadcastMessageHormone extends Hormone{
 	}
 
 	public function getData() : array{
-		return ["message" => $this->message, "permissions" => $this->permissions];
+		return [
+			"message" => $this->message,
+			"permissions" => $this->permissions
+		];
 	}
 
 	public function respond(array $args){

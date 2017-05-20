@@ -53,7 +53,7 @@ class NotifyJoinHormone extends Hormone{
 					$hormone = new SpecificBumpHormone();
 					$hormone->username = $this->username;
 					$hormone->receptingTissueId = $this->tissueId;
-					$hormone->bumpedFromTissueName = $plugin->getDisplayName();
+					$hormone->bumpedFromTissueName = $plugin->getServerDisplayName();
 					$hormone->release($plugin);
 				}
 			}

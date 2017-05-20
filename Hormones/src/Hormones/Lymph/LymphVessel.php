@@ -15,8 +15,8 @@
 
 namespace Hormones\Lymph;
 
+use Exception;
 use Hormones\HormonesPlugin;
-use libasynql\exception\MysqlException;
 use libasynql\MysqlCredentials;
 use libasynql\QueryMysqlTask;
 use libasynql\result\MysqlErrorResult;
@@ -48,7 +48,7 @@ class LymphVessel extends QueryMysqlTask{
 		$this->ip = $plugin->getVisibleAddress();
 		$this->port = $plugin->getServer()->getPort();
 		$this->hormonesVersion = HormonesPlugin::DATABASE_VERSION;
-		$this->displayName = $plugin->getDisplayName();
+		$this->displayName = $plugin->getServerDisplayName();
 		$this->processId = getmypid(); // make sure this is called from the main thread
 
 		$this->objectCreated = microtime(true);
@@ -60,7 +60,7 @@ class LymphVessel extends QueryMysqlTask{
 		if(!$this->normal){
 			$lr = new LymphResult();
 			$lr->netTime = 0;
-			$lr->altServer = new AltServerObject();
+			$lr->altServer = null;
 			$this->setResult($lr);
 			return;
 		}
@@ -80,46 +80,73 @@ class LymphVessel extends QueryMysqlTask{
 		$stmt->execute();
 		$stmt->close();
 
-		$result = MysqlResult::executeQuery($mysqli,
-			"SELECT t.tissues, t.online, t.total, t2.ip, t2.port, t2.displayName FROM
-				(SELECT COUNT(*) tissues, IFNULL(SUM(usedSlots), 0) online, IFNULL(SUM(maxSlots), 0) total, GREATEST(0, MAX(maxSlots - usedSlots)) maxAvail
-						FROM hormones_tissues WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 AND tissueId <> ?) t
-				LEFT JOIN hormones_tissues t2 ON t.maxAvail = t2.maxSlots - t2.usedSlots AND tissueId <> ?
-				WHERE UNIX_TIMESTAMP() - UNIX_TIMESTAMP(t2.lastOnline) < 10
-				ORDER BY maxSlots LIMIT 1",
-			[["i", $this->organId], ["s", $this->tissueId], ["s", $this->tissueId]]);
+		$statResult = MysqlResult::executeQuery($mysqli, "SELECT tissues, online, total, organId IS NULL isRollup FROM
+			(SELECT organId, COUNT(*) tissues, IFNULL(SUM(usedSlots), 0) online, IFNULL(SUM(maxSlots), 0) total
+				FROM hormones_tissues WHERE UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 GROUP BY organId WITH ROLLUP) t
+			WHERE organId IS NULL OR organId = ?",
+			[["i", $this->organId]]);
+		$altResult = MysqlResult::executeQuery($mysqli, /** @lang MySQL */
+			"SELECT t2.ip, t2.port, t2.displayName FROM (
+				SELECT GREATEST(0, MAX(maxSlots - usedSlots)) maxAvail FROM hormones_tissues
+					WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 AND tissueId <> ?
+			) t INNER JOIN hormones_tissues t2 ON t.maxAvail = t2.maxSlots - t2.usedSlots
+				AND organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 AND tissueId <> ?", [
+				["i", $this->organId], ["s", $this->tissueId],
+				["i", $this->organId], ["s", $this->tissueId]
+			]);
 		// maxSlots - usedSlots = available slots
 		// ORDER BY maxSlots => minimum percentage load
 
-		if($result instanceof MysqlSelectResult){
-			$result->fixTypes([
+		if($statResult instanceof MysqlSelectResult){
+			$statResult->fixTypes([
+				"isRollup" => MysqlSelectResult::TYPE_BOOL,
 				"tissues" => MysqlSelectResult::TYPE_INT,
 				"online" => MysqlSelectResult::TYPE_INT,
 				"total" => MysqlSelectResult::TYPE_INT,
-				"ip" => MysqlSelectResult::TYPE_STRING,
-				"port" => MysqlSelectResult::TYPE_INT,
-				"displayName" => MysqlSelectResult::TYPE_STRING,
 			]);
-			$lr = new LymphResult();
-			$lr->netTime = $result->getTiming();
-			$lr->altServer = $altServer = new AltServerObject();
-			if(!isset($result->rows[0])){
-				$lr->tissueCount = 0;
-				$lr->onlineSlots = 0;
-				$lr->totalSlots = 0;
+			if(count($statResult->rows) !== 2){
+				$this->setResult(new Exception("Lymph query returns no rows"));
 			}else{
-				$row = $result->rows[0];
-				$lr->tissueCount = $row["tissues"];
-				$lr->onlineSlots = $row["online"];
-				$lr->totalSlots = $row["total"];
-				$altServer->address = $row["ip"];
-				$altServer->port = $row["port"];
-				$altServer->displayName = $row["displayName"];
+				if($altResult instanceof MysqlSelectResult and count($altResult->rows) === 1){
+					$altResult->fixTypes([
+						"ip" => MysqlSelectResult::TYPE_STRING,
+						"port" => MysqlSelectResult::TYPE_INT,
+						"displayName" => MysqlSelectResult::TYPE_STRING,
+					]);
+					$row2 = $altResult->rows[0];
+					$altServer = new AltServerObject();
+					$altServer->address = $row2["ip"];
+					$altServer->port = $row2["port"];
+					$altServer->displayName = $row2["displayName"];
+				}else{
+					$altServer = null;
+				}
+				foreach($statResult->rows as $row){
+					if($row["isRollup"]){
+						$rollupRow = $row;
+					}else{
+						$organicRow = $row;
+					}
+				}
+				if(isset($organicRow, $rollupRow)){
+					$lr = new LymphResult();
+					$lr->netTime = $statResult->getTiming();
+					$lr->organicTissueCount = $organicRow["tissues"];
+					$lr->organicOnlineSlots = $organicRow["online"];
+					$lr->organicTotalSlots = $organicRow["total"];
+					$lr->networkTissueCount = $rollupRow["tissues"];
+					$lr->networkOnlineSlots = $rollupRow["online"];
+					$lr->networkTotalSlots = $rollupRow["total"];
+					$lr->altServer = $altServer;
+					$this->setResult($lr);
+				}else{
+					$this->setResult(new Exception("Lymph query returns no rows"));
+				}
 			}
 
-			$this->setResult($lr);
-		}elseif($result instanceof MysqlErrorResult){
-			$this->setResult($result->getException());
+		}else{
+			assert($statResult instanceof MysqlErrorResult);
+			$this->setResult($statResult->getException());
 		}
 	}
 
@@ -130,7 +157,7 @@ class LymphVessel extends QueryMysqlTask{
 		}
 		if($this->normal){
 			$result = $this->getResult();
-			if($result instanceof MysqlException){
+			if($result instanceof Exception){
 				$plugin->getLogger()->logException($result);
 			}elseif($result instanceof LymphResult){
 				$plugin->setLymphResult($result);

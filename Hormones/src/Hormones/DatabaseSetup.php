@@ -102,7 +102,7 @@ class DatabaseSetup{
 			"CREATE TABLE IF NOT EXISTS hormones_organs (
 				organId TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
 				name VARCHAR(64) UNIQUE
-			);",
+			) AUTO_INCREMENT = 0;",
 			/** @lang MySQL */
 			"CREATE TRIGGER organs_organId_limit BEFORE INSERT ON hormones_organs FOR EACH ROW
 			BEGIN

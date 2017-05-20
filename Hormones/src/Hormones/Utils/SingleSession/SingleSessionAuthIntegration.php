@@ -32,7 +32,7 @@ abstract class SingleSessionAuthIntegration implements Listener{
 			$hormone = new PushPlayersHormone();
 			$hormone->username = $player->getName();
 			$hormone->sourceTissueId = $this->module->getPlugin()->getTissueId();
-			$hormone->sourceTissueName = $this->module->getPlugin()->getDisplayName();
+			$hormone->sourceTissueName = $this->module->getPlugin()->getServerDisplayName();
 			$hormone->ip = $player->getAddress();
 			$hormone->release($this->module->getPlugin());
 		}

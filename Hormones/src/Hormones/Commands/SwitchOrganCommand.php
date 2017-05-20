@@ -39,6 +39,9 @@ class SwitchOrganCommand extends HormonesCommand{
 		$parent = $plugin->getServer()->getPluginManager()->getPermission("hormones.transfer.organic");
 		foreach($result->rows as $row){
 			$organId = (int) $row["organId"];
+			if($organId === $plugin->getOrganId()){
+				continue;
+			}
 			$organName = $row["name"];
 			$perm = new Permission("hormones.transfer.organic.$organName", "Allows transferring to \"$organName\" servers", Permission::DEFAULT_TRUE);
 			$parent->getChildren()[$perm->getName()] = true;

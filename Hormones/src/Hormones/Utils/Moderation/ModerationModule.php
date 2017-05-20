@@ -16,6 +16,7 @@
 namespace Hormones\Utils\Moderation;
 
 use Hormones\HormonesPlugin;
+use Hormones\Utils\Moderation\Commands\BroadcastCommand;
 use Hormones\Utils\Moderation\Commands\PenaltyCommand;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerChatEvent;
@@ -32,6 +33,8 @@ class ModerationModule implements Listener{
 		$this->plugin = $plugin;
 		$this->plugin->getServer()->getPluginManager()->registerEvents($this, $plugin);
 		$this->plugin->getServer()->getCommandMap()->registerAll("hormones", [
+			new BroadcastCommand($plugin, false),
+			new BroadcastCommand($plugin, true),
 			new PenaltyCommand($plugin, PenaltySession::TYPE_BAN, "nban", "Ban"),
 			new PenaltyCommand($plugin, PenaltySession::TYPE_MUTE, "nmute", "Mute"),
 		]);

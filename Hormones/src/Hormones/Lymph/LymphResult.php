@@ -18,10 +18,14 @@ namespace Hormones\Lymph;
 class LymphResult{
 	public $netTime;
 
-	public $tissueCount;
-	public $onlineSlots;
-	public $totalSlots;
+	public $organicTissueCount;
+	public $organicOnlineSlots;
+	public $organicTotalSlots;
 
-	/** @var AltServerObject */
+	public $networkTissueCount;
+	public $networkOnlineSlots;
+	public $networkTotalSlots;
+
+	/** @var AltServerObject|null */
 	public $altServer;
 }

@@ -59,7 +59,7 @@ class PenaltyCommand extends HormonesCommand{
 		}
 		$message = implode(" ", $args);
 		$organMask = $sender->hasPermission("hormones.moderation.moderator.global.{$this->type}") ? str_repeat("\xFF", 8) :
-			HormonesPlugin::setNthBitSmallEndian($this->getPlugin()->getOrganId(), 8);
+			HormonesPlugin::setNthBit($this->getPlugin()->getOrganId(), 8);
 
 		$hormone = new PenaltyHormone($organMask, $duration);
 		$hormone->type = $this->type;
