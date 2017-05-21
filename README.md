@@ -15,7 +15,7 @@ there may be servers of different types (a.k.a. organs), e.g. hub servers, survi
     * List all online servers using /servers
     * Stop all online servers using /nstop
     * Broadcast a message to all servers in the _network_ using /nsay
-    * Broadcast a message to all servers in the _tissue_ using /osay
+    * Broadcast a message to all servers in the _organ_ using /osay
     * Mute players of a certain name/from a certain IP in the network/tissue using /nmute
     * Ban players of a certain name/from a certain IP in the network/tissue using /nban
 * Load balancing
