@@ -24,7 +24,7 @@ class SimpleAuthSingleSessionIntegration extends SingleSessionAuthIntegration{
 	private $int;
 
 	public function __construct(SingleSessionModule $module){
-		$int = $module->getPlugin()->getServer()->getPluginManager()->getPlugin("ServerAuth");
+		$int = $module->getPlugin()->getServer()->getPluginManager()->getPlugin("SimpleAuth");
 		if(!($int instanceof SimpleAuth) || !$int->isEnabled()){
 			throw new \ClassNotFoundException();
 		}
