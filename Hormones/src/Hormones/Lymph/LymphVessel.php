@@ -105,6 +105,7 @@ class LymphVessel extends QueryMysqlTask{
 				"total" => MysqlSelectResult::TYPE_INT,
 			]);
 			if(count($statResult->rows) !== 2){
+				var_dump($statResult->rows);
 				$this->setResult(new Exception("Lymph query returns no rows"));
 			}else{
 				if($altResult instanceof MysqlSelectResult and count($altResult->rows) === 1){
@@ -140,6 +141,7 @@ class LymphVessel extends QueryMysqlTask{
 					$lr->altServer = $altServer;
 					$this->setResult($lr);
 				}else{
+					var_dump($statResult->rows, $organicRow ?? null, $rollupRow ?? null);
 					$this->setResult(new Exception("Lymph query returns no rows"));
 				}
 			}

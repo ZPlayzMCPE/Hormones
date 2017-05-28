@@ -129,7 +129,7 @@ class DatabaseSetup{
 				maxSlots SMALLINT UNSIGNED,
 				ip VARCHAR(68),
 				port SMALLINT UNSIGNED,
-				hormonesVersion SMALLINT,
+				hormonesVersion MEDIUMINT,
 				displayName VARCHAR(100),
 				processId SMALLINT UNSIGNED,
 				FOREIGN KEY (organId) REFERENCES hormones_organs(organId) ON UPDATE CASCADE ON DELETE RESTRICT
