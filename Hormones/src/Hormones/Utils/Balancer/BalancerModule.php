@@ -19,6 +19,7 @@ use Hormones\HormonesPlugin;
 use Hormones\Utils\Balancer\Event\PlayerBalancedEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerLoginEvent;
+use pocketmine\event\server\QueryRegenerateEvent;
 
 class BalancerModule implements Listener{
 	private $plugin;
@@ -30,6 +31,24 @@ class BalancerModule implements Listener{
 		$this->exempts = array_fill_keys(array_map("strtolower", $this->getPlugin()->getConfig()->getNested("balancer.exemptPlayers")), true);
 		if($plugin->getConfig()->getNested("balancer.enabled", true)){
 			$this->getPlugin()->getServer()->getPluginManager()->registerEvents($this, $plugin);
+		}
+	}
+
+	/**
+	 * @param QueryRegenerateEvent $event
+	 * @priority LOW
+	 */
+	public function e_onQueryRegen(QueryRegenerateEvent $event){
+		switch(strtolower($this->plugin->getConfig()->getNested("balancer.queryPlayerCount", "organic"))){
+			case "tissue":
+				break;
+			case "organic":
+				$event->setPlayerCount($this->plugin->getLymphResult()->organicOnlineSlots);
+				$event->setMaxPlayerCount($this->plugin->getLymphResult()->organicTotalSlots);
+				break;
+			case "network":
+				$event->setPlayerCount($this->plugin->getLymphResult()->networkOnlineSlots);
+				$event->setMaxPlayerCount($this->plugin->getLymphResult()->networkTotalSlots);
 		}
 	}
 

@@ -36,7 +36,7 @@ kidney:
   interval: 600 # frequency to delete old hormones, in seconds
   expiry: 300 # number of seconds that hormones should stay in blood before being deleted
 
-# Commands named after the organs that users can use to transfer to the most empty server of that tissue
+# Commands named after the organs that users can use to transfer to the most empty server of that organ
 # They will have permission nodes
 organicTransfer:
   # How organic-transfer commands should be registered. Possible values:
@@ -54,6 +54,10 @@ balancer:
   # List of players (usernames, case-insensitive) who can bypass the soft limit.
   exemptPlayers:
   - Steve
+
+  # Show network/organic player count instead of tissue-local player count in the client server list screen
+  # Options: tissue, organic, network
+  queryPlayerCount: organic
 
 # Ensures that no two logged-in players on the network will have the same name at the same moment
 singleSession:
