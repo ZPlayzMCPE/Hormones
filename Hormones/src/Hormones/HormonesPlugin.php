@@ -125,9 +125,8 @@ class HormonesPlugin extends PluginBase{
 		}
 
 		$this->getLogger()->debug("Scheduling tasks...");
-		$normal = !$this->getServer()->getConfigBoolean("hormones.stopasync", false); // debug line, can ignore this
-		$this->getServer()->getScheduler()->scheduleAsyncTask(new LymphVessel($cred, $this, $normal));
-		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, Artery::STARTUP_ID, $organId, $normal));
+		$this->getServer()->getScheduler()->scheduleAsyncTask(new LymphVessel($cred, $this));
+		$this->getServer()->getScheduler()->scheduleAsyncTask(new Artery($cred, Artery::STARTUP_ID, $organId));
 		$size = $this->getServer()->getScheduler()->getAsyncTaskPoolSize();
 		for($i = 0; $i < $size; $i++){
 			$this->getLogger()->debug("Initializing libasynql on async worker #$i");

@@ -35,19 +35,14 @@ class Artery extends QueryMysqlTask{
 	private $normal;
 	private $virtualMax;
 
-	public function __construct(MysqlCredentials $credentials, int $hormonesAfter, int $organId, bool $normal = true){
+	public function __construct(MysqlCredentials $credentials, int $hormonesAfter, int $organId){
 		parent::__construct($credentials);
 		$this->hormonesAfter = $hormonesAfter;
 		$this->organId = $organId;
 		$this->objectCreated = microtime(true);
-		$this->normal = $normal;
 	}
 
 	protected function execute(){
-		if(!$this->normal){
-			return;
-		}
-
 		$bitmask = HormonesPlugin::setNthBit($this->organId, 8);
 		if($this->hormonesAfter !== Artery::STARTUP_ID){
 			$after = "hormoneId > ?";

@@ -136,3 +136,4 @@ transferOnly:
   # examples:
 #  - server.pmmp.io       # assuming the port from server.properties
 #  - server.pmmp.io:19135
+...
