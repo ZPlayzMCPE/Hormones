@@ -27,6 +27,7 @@ use Hormones\Lymph\LymphResult;
 use Hormones\Lymph\LymphVessel;
 use Hormones\TimingStats\TimerSet;
 use Hormones\Utils\Balancer\BalancerModule;
+use Hormones\Utils\CondTrans\CondTransModule;
 use Hormones\Utils\Moderation\ModerationModule;
 use Hormones\Utils\SingleSession\SingleSessionModule;
 use Hormones\Utils\TransferOnly\TransferOnlyModule;
@@ -75,6 +76,8 @@ class HormonesPlugin extends PluginBase{
 	private $singleSessionModule;
 	/** @var TransferOnlyModule */
 	private $transferOnlyModule;
+	/** @var CondTransModule */
+	private $condTransModule;
 
 	/** @var callable[] */
 	private $arteryDiastoleHandlers = [];
@@ -165,6 +168,7 @@ class HormonesPlugin extends PluginBase{
 		$this->moderationModule = new ModerationModule($this);
 		$this->singleSessionModule = new SingleSessionModule($this);
 		$this->transferOnlyModule = new TransferOnlyModule($this);
+		$this->condTransModule = new CondTransModule($this);
 	}
 
 	public function onDisable(){
@@ -173,7 +177,7 @@ class HormonesPlugin extends PluginBase{
 
 	public function getConfig() : Config{
 		if(!isset($this->myConfig)){
-			$this->myConfig = new Config($this->getDataFolder() . "config.yml");
+			$this->myConfig = new Config($this->getDataFolder() . "config.yml"); // prevent calling reloadConfig()
 		}
 		return $this->myConfig;
 	}
@@ -259,6 +263,10 @@ class HormonesPlugin extends PluginBase{
 
 	public function getTransferOnlyModule() : TransferOnlyModule{
 		return $this->transferOnlyModule;
+	}
+
+	public function getCondTransModule() : CondTransModule{
+		return $this->condTransModule;
 	}
 
 
