@@ -13,6 +13,8 @@
  *
 */
 
+declare(strict_types=1);
+
 namespace Hormones\Commands;
 
 use Hormones\HormonesPlugin;

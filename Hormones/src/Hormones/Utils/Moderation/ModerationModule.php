@@ -13,8 +13,11 @@
  *
 */
 
+declare(strict_types=1);
+
 namespace Hormones\Utils\Moderation;
 
+use Hormones\Commands\FindOrganicTissueTask;
 use Hormones\HormonesPlugin;
 use Hormones\Utils\Moderation\Commands\BroadcastCommand;
 use Hormones\Utils\Moderation\Commands\PenaltyCommand;
@@ -69,7 +72,16 @@ class ModerationModule implements Listener{
 		foreach($this->penaltyGroups[Penalty::TYPE_BAN] as $k => $penalty){
 			if($penalty->hasExpired()){
 				unset($this->penaltyGroups[Penalty::TYPE_BAN][$k]);
-			}elseif($penalty->target->matchesPlayer($event->getPlayer())){
+			}elseif($penalty->target->matchesPlayer($player = $event->getPlayer())){
+				if($organName = $this->plugin->getConfig()->getNested("moderation.banTransfer", false)){
+					$this->plugin->getServer()->getScheduler()->scheduleAsyncTask(new FindOrganicTissueTask(
+						$this->plugin->getCredentials(), $event->getPlayer(), $organName, null, function() use ($organName){
+						$this->plugin->getLogger()->critical("Unknown hormone $organName as defined in config.yml:moderation.banTransfer");
+					}, function() use ($player, $penalty){
+						$player->kick($penalty->getNotifyMessage());
+					}
+					));
+				}
 				$event->setCancelled();
 				$event->setKickMessage($penalty->getNotifyMessage());
 				break;

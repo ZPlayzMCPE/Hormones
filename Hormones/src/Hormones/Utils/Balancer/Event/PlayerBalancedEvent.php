@@ -13,6 +13,8 @@
  *
 */
 
+declare(strict_types=1);
+
 namespace Hormones\Utils\Balancer\Event;
 
 use Hormones\Event\HormonesEvent;

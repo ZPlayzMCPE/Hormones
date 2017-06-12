@@ -13,6 +13,8 @@
  *
 */
 
+declare(strict_types=1);
+
 namespace Hormones\NetChat\Hormones;
 
 use Hormones\Hormone\Hormone;

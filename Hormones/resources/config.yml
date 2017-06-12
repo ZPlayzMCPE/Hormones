@@ -59,6 +59,12 @@ balancer:
   # Options: tissue, organic, network
   queryPlayerCount: organic
 
+# Moderation settings
+moderation:
+  # The organ to transfer the player to if he is banned
+  # Put the organ name here to enable, or put false to disable
+  banTransfer: false
+
 # Ensures that no two logged-in players on the network will have the same name at the same moment
 singleSession:
   # Action to do if there is collision. Possible values:
@@ -130,4 +136,34 @@ transferOnly:
   # examples:
 #  - server.pmmp.io       # assuming the port from server.properties
 #  - server.pmmp.io:19135
+
+# CondTrans means Conditional Transfer.
+# It conditionally transfers players to another organ if the player matches specific conditions.
+condTrans:
+  # You can set as many rules as you like for CondTrans here.
+  # Each rule consists of "conditions" and "destination".
+  # A player will be transferred to the organ named in "destination" if ALL the conditions in "conditions" are met.
+  # The condition can be in a simple text or a list.
+  # The first word is the name of the value to check for, and the words after are the matching value
+  # You may use wildcard characters * (zero to multiple arbitrary characters) and ? (one arbitrary character)
+  # Possible values (note that some values may not be accurate depending on client mods and VPNs or proxies):
+  #   mcpe (MCPE version) e.g. "1.0.6.0" (WARNING: If the client or server is outdated, this will not work; use protocol instead)
+  #   os (device OS)
+  #      (Possible values for os:
+  #       Android => 1
+  #       iOS => 2
+  #       OSX => 3
+  #       FireOS => 4
+  #       GearVR => 5
+  #       Hololens => 6
+  #       Win10 => 7
+  #       Win32 => 8
+  #       Dedicated => 9)
+  #   model (device model) e.g. "LGE LG-H955"
+  rules:
+    # Delete the leading ## in the following lines to enable a rule!
+##  - conditions: protocol 96
+##    destination: normal_p96
+##  - conditions: os 7
+##    destination: normal_win10
 ...

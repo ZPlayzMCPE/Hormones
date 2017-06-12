@@ -13,6 +13,8 @@
  *
 */
 
+declare(strict_types=1);
+
 namespace Hormones\Commands;
 
 use libasynql\MysqlCredentials;
@@ -25,19 +27,33 @@ use pocketmine\Server;
 use pocketmine\utils\TextFormat;
 
 class FindOrganicTissueTask extends QueryMysqlTask{
-	/** @var int */
-	private $organId;
 	/** @var string */
 	private $organName;
+	/** @var int|null */
+	private $organId;
 
-	public function __construct(MysqlCredentials $credentials, Player $player, int $organId, string $organName){
-		parent::__construct($credentials, $player);
-		$this->organId = $organId;
+	public function __construct(MysqlCredentials $credentials, Player $player, string $organName, int $organId = null, callable $onUnknownOrgan = null, callable $onServersFull = null){
+		parent::__construct($credentials, [$player, $onUnknownOrgan, $onServersFull]);
 		$this->organName = $organName;
+		$this->organId = $organId;
 	}
 
 	protected function execute(){
-		$this->setResult(MysqlResult::executeQuery($this->getMysqli(), "SELECT ip, port, displayName FROM hormones_tissues
+		$db = $this->getMysqli();
+		if($this->organId === null){
+			$result = MysqlResult::executeQuery($db, "SELECT organId FROM hormones_organs WHERE name = ?", [["s", $this->organName]]);
+			if($result instanceof MysqlSelectResult){
+				if(count($result->rows) === 0){
+					$this->setResult(true);
+					return;
+				}
+				$this->organId = (int) $result->rows[0]["organId"];
+			}else{
+				assert($result instanceof MysqlErrorResult);
+				throw $result->getException();
+			}
+		}
+		$this->setResult(MysqlResult::executeQuery($db, "SELECT ip, port, displayName FROM hormones_tissues
 				WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 5 AND maxSlots > usedSlots
 				ORDER BY (maxSlots - usedSlots) DESC, maxSlots ASC LIMIT 1",
 			[["i", $this->organId]]));
@@ -45,18 +61,27 @@ class FindOrganicTissueTask extends QueryMysqlTask{
 
 	public function onCompletion(Server $server){
 		/** @var Player $player */
-		$player = $this->fetchLocal($server);
+		/** @var callable|null $onUnknownOrgan */
+		/** @var callable|null $onServersFull */
+		list($player, $onUnknownOrgan, $onServersFull) = $this->fetchLocal($server);
 		if(!$player->isOnline()){
 			return;
 		}
 
 		$result = $this->getResult();
-		if($result instanceof MysqlSelectResult){
+		if($result === true){
+			$onUnknownOrgan();
+			return;
+		}elseif($result instanceof MysqlSelectResult){
 			if(count($result->rows) === 1){
 				$player->transfer($result->rows[0]["ip"], $result->rows[0]["port"],
 					"Transferring you to the least full $this->organName server: " . $result->rows[0]["displayName"]);
 			}else{
-				$player->sendMessage(TextFormat::YELLOW . "All $this->organName servers are full/offline!");
+				if(is_callable($onServersFull)){
+					$onServersFull();
+				}else{
+					$player->sendMessage(TextFormat::YELLOW . "All $this->organName servers are full/offline!");
+				}
 			}
 		}else{
 			assert($result instanceof MysqlErrorResult);

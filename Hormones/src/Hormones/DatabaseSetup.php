@@ -13,6 +13,8 @@
  *
 */
 
+declare(strict_types=1);
+
 namespace Hormones;
 
 use Hormones\Hormone\Defaults\VerifyDatabaseVersionHormone;
@@ -27,9 +29,11 @@ use Logger;
 class DatabaseSetup{
 	/**
 	 * @internal Only to be called from HormonesPlugin.php
+	 *
 	 * @param MysqlCredentials $cred
 	 * @param HormonesPlugin   $plugin
 	 * @param int              &$organId
+	 *
 	 * @return bool
 	 */
 	public static function setupDatabase(MysqlCredentials $cred, HormonesPlugin $plugin, &$organId) : bool{

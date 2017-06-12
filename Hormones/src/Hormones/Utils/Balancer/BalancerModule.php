@@ -13,6 +13,8 @@
  *
 */
 
+declare(strict_types=1);
+
 namespace Hormones\Utils\Balancer;
 
 use Hormones\HormonesPlugin;
@@ -36,6 +38,7 @@ class BalancerModule implements Listener{
 
 	/**
 	 * @param QueryRegenerateEvent $event
+	 *
 	 * @priority LOW
 	 */
 	public function e_onQueryRegen(QueryRegenerateEvent $event){
