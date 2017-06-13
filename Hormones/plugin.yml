@@ -1,5 +1,5 @@
 name: Hormones
-version: 2.0.2-beta
+version: 2.0.3-beta
 api:
 - 3.0.0-alpha5
 main: Hormones\HormonesPlugin
