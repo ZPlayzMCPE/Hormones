@@ -51,7 +51,7 @@ class SingleSessionModule implements Listener{
 			"bump" => SingleSessionModule::MODE_BUMP,
 			"ip-push" => SingleSessionModule::MODE_IP_PUSH
 		];
-		if(isset($modeMap[strtolower($modeStr = $plugin->getConfig()->getNested("singleSession.mode", false))])){
+		if(isset($modeMap[strtolower($modeStr = (string) $plugin->getConfig()->getNested("singleSession.mode", false))])){
 			$this->mode = $modeMap[strtolower($modeStr)];
 		}else{
 			$plugin->getLogger()->warning("Unknown singleSession mode \"$modeStr\", using default value (\"off\")");

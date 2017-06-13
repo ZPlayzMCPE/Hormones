@@ -39,9 +39,7 @@ class LymphVessel extends QueryMysqlTask{
 
 	private $objectCreated;
 
-	private $normal;
-
-	public function __construct(MysqlCredentials $credentials, HormonesPlugin $plugin, bool $normal = true){
+	public function __construct(MysqlCredentials $credentials, HormonesPlugin $plugin){
 		parent::__construct($credentials);
 		$this->tissueId = $plugin->getTissueId();
 		$this->organId = $plugin->getOrganId();
@@ -54,18 +52,9 @@ class LymphVessel extends QueryMysqlTask{
 		$this->processId = getmypid(); // make sure this is called from the main thread
 
 		$this->objectCreated = microtime(true);
-
-		$this->normal = $normal;
 	}
 
 	protected function execute(){
-		if(!$this->normal){
-			$lr = new LymphResult();
-			$lr->netTime = 0;
-			$lr->altServer = null;
-			$this->setResult($lr);
-			return;
-		}
 		$mysqli = $this->getMysqli();
 		$stmt = $mysqli->prepare(/** @lang MySQL */
 			"INSERT INTO hormones_tissues
@@ -159,17 +148,15 @@ class LymphVessel extends QueryMysqlTask{
 		if(!$plugin->isEnabled()){
 			return;
 		}
-		if($this->normal){
-			$result = $this->getResult();
-			if($result instanceof Exception){
-				$plugin->getLogger()->logException($result);
-			}elseif($result instanceof LymphResult){
-				$plugin->setLymphResult($result);
-				$plugin->getTimers()->lymphNet->addDatum($result->netTime);
-			}
+		$result = $this->getResult();
+		if($result instanceof Exception){
+			$plugin->getLogger()->logException($result);
+		}elseif($result instanceof LymphResult){
+			$plugin->setLymphResult($result);
+			$plugin->getTimers()->lymphNet->addDatum($result->netTime);
 		}
 
 		$plugin->getTimers()->lymphCycle->addDatum(microtime(true) - $this->objectCreated);
-		$server->getScheduler()->scheduleAsyncTask(new LymphVessel($this->getCredentials(), $plugin, $this->normal));
+		$server->getScheduler()->scheduleAsyncTask(new LymphVessel($this->getCredentials(), $plugin));
 	}
 }
