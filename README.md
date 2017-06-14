@@ -1,13 +1,82 @@
-# Hormones
+# Hormones [![Join the chat at https://gitter.im/LegendOfMCPE/Hormones](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/LegendOfMCPE/Hormones?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Poggit-CI](https://poggit.pmmp.io/ci.shield/LegendOfMCPE/Hormones/~?style=square)](https://poggit.pmmp.io/ci/LegendOfMCPE/Hormones/~)
 
 Ultimate endocrine management for load balancing and network administration
 
-[![Join the chat at https://gitter.im/LegendOfMCPE/Hormones](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/LegendOfMCPE/Hormones?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Poggit-CI](https://poggit.pmmp.io/ci.shield/LegendOfMCPE/Hormones/~)](https://poggit.pmmp.io/ci/LegendOfMCPE/Hormones/~)
+## Introduction
+Hormones is a plugin designed for server networks with many servers. You may have a network like this:
 
-Hormones connects a network of PocketMine servers (a.k.a. tissues) together with a MySQL database. In the same network,
-there may be servers of different types (a.k.a. organs), e.g. hub servers, survival servers, PvP servers, etc.
+```
+entry: play.myserver.com:19132 with 0 slots
+lobby #1: lobby.myserver.com:19132 with 20 slots
+lobby #2: lobby.myserver.com:19133 with 20 slots
+lobby #3: lobby2.myserver.com:19132 with 10 slots
+lobby #4: lobby2.myserver.com:19133 with 10 slots
+hunger games #1: hg.myserver.com:19132 with 24 slots
+hunger games #2: hg.myserver.com:19133 with 24 slots
+hunger games #4: hg2.myserver.com:19132 with 24 slots
+skyblock #1: sb.myserver.com:19132 with 15 slots
+skyblock #2: sb2.myserver.com:19132 with 15 slots
+etc...
+```
 
+You may want your network to be like this &mdash; Players can join at play.myserver.com, and
+they are automatically redirected to one of the lobby servers, and they can join the game servers using portals,
+commands or whatever in the lobby, and you want all lobby and game servers to be load-balanced such that you can have an
+equal amount of players on each server of the same type.
+
+You may even want more convenient control over the whole network &mdash; When you ban a player on any servers, you may
+want to have him banned on all servers in your network; when a lobby server is full, you may want to transfer the player
+to another lobby server with more slots; you may not want to let a player join any of your servers without being
+transferred from the entry server to prevent overcrowding...
+
+*If you are a plugin developer: You may even want to transfer data across servers in the network conveniently &mdash; If
+you are working on a team plugin, you may want to allow players on different servers to be able to talk on the team chat
+together; if you are working on a hardcore plugin, a player died on one of the servers, you may want to clear his
+inventory on all servers...*
+
+If these are what you want to do, Hormones is the perfect plugin designed for you. Hormones is a plugin for managing
+different servers in your network. *For developers: Hormones also has a "Hormone API", which allows plugins to
+propagate data to other servers conveniently through objects called "Hormone".*
+
+Hormones can connect all your servers, providing convenience in both administration and moderation, with a single MySQL
+schema. Give Hormones a MySQL database where tables can be freely created and edited, and with simple setup, Hormones
+will link different servers into server types and into your big network, just like the human coordinate system linking
+different body tissues into different organs, hence into the whole human body.
+
+## Some special terms
+##### Organ
+An organ is a group of servers which have the same type, serving the same function in your server. For example, in the
+example in the introduction above, there are four organs, namely `entry`, `lobby`, `hunger_games` and `skyblock`. Organ
+names are taken as command arguments, so it must not contain spaces and should be easy to type for players. They can
+also be made command names optionally.
+
+Organ names are case-insensitive, i.e. servers are in the same organ as long as their organ names are the same,
+regardless whether they are in upper case or lower case, etc.
+
+##### Tissue
+Similarly, a tissue is a component of an organ, i.e. one PocketMine server instance.
+
+## Features
+#### Load balancing
+
+## Setup
+Install a MySQL database that can be accessed from all your servers. Create a user for Hormones (e.g. `'hormones'@'%'`),
+and create a schema (e.g. `hormones`). Grant access (at least requires LOCK, CREATE TABLE, CREATE TRIGGER, SELECT,
+INSERT, UPDATE and DELETE) on the new schema to the Hormones user.
+
+Now, for each of the servers in your network, [install Hormones](https://poggit.pmmp.io/p/Hormones) and run the server
+once. Hormones will be automatically disabled if it's run the first time, but it will generate a config.yml file at
+`plugins/Hormones/config.yml`. Edit this file to setup Hormones for each server.
+
+First, delete this line from the config.yml:
+
+```
+Dear User: Please delete this line after you have finished setting up the config file.
+```
+
+Hormones won't run if this line is present. Next, put the MySQL login for the Hormones user you just created in the
+`mysql` section. _Using a separate user just for the Hormones' use is recommended_ to enhance security. Leave `socket`
+empty (as `""`) if you don't know what it is.
 
 ## Features
 * Network administration / moderation
