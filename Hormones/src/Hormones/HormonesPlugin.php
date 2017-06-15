@@ -178,8 +178,7 @@ class HormonesPlugin extends PluginBase{
 	}
 
 	private function calcServerId(){
-		return md5($this->getServer()->getDataPath() . $this->getServer()->getIp() . $this->getServer()->getPort() .
-			$this->getConfig()->getNested("localize.name", "auto"));
+		return md5($this->getServer()->getDataPath() . $this->getServer()->getIp() . $this->getServer()->getPort() . Utils::getMachineUniqueId()->toString());
 	}
 
 	public function getTissueId(){

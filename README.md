@@ -53,11 +53,35 @@ also be made command names optionally.
 Organ names are case-insensitive, i.e. servers are in the same organ as long as their organ names are the same,
 regardless whether they are in upper case or lower case, etc.
 
-##### Tissue
-Similarly, a tissue is a component of an organ, i.e. one PocketMine server instance.
+Hormones converts organ names into internal organ IDs, which ranges from 0 to 63. Therefore, there must not be more than
+64 organs in a network. This is a technical constraint that cannot be fixed easily. The organ names and IDs are listed
+in the `hormones_organs` table.
 
-## Features
-#### Load balancing
+If there are too many organs in the `hormones_organs` table, those that are not not used in any tissues (previously used
+on a tissue but later changed to another organ name) will be deleted to free up organ IDs. Hormones may fail to enable
+if no organ IDs are available; you may then want to delete the organ IDs manually by editing the `hormones_organs`
+table. Note that organ IDs should not be changed carelessly since they are referenced from other places in the database too and the changes may not be easily cascaded.
+
+##### Tissue
+Similarly, a tissue is a component of an organ, i.e. one PocketMine server instance. In Hormones, a "tissue" always means "a PocketMine server", since the word "server" is ambiguous.
+
+Hormones lists all tissues in the `hormones_tissues` table. Tissues are identified by a generated tissue ID; the `localize`.`name` value is not used for identifying tissues directly nor indirectly, but only for your convenience.
+
+##### Hormone
+A hormone is a signal that would be received by all tissues (or all tissues in certain organ(s)). It triggers certain
+actions on tissues based on the hormone type. For example, the StopServerHormone will cause the receiving tissues to
+shut down (and restart depending on the options starting the server).
+
+When a hormone is released, it is inserted as a row in the `hormones_blood` table. It usually takes up to one second or
+several for all online tissues to download the new hormone, so it's inappropriate to delete the hormone immediately
+after it's inserted.
+
+There are also some hormones that have a longer lifetime; such hormones would be received every time a tissue starts until they have expired. (Other hormones expire immediately after insertion)
+
+##### Kidney
+The kidney is a tool to clean up the database to delete expired hormones (at least several seconds or minutes after
+they expire) periodically. Plugin developers working on Hormones-related plugins may want to disable it for debugging.
+Other users should leave the relevant settings as default.
 
 ## Setup
 Install a MySQL database that can be accessed from all your servers. Create a user for Hormones (e.g. `'hormones'@'%'`),
@@ -77,6 +101,37 @@ Dear User: Please delete this line after you have finished setting up the config
 Hormones won't run if this line is present. Next, put the MySQL login for the Hormones user you just created in the
 `mysql` section. _Using a separate user just for the Hormones' use is recommended_ to enhance security. Leave `socket`
 empty (as `""`) if you don't know what it is.
+
+The `localize` section in config.yml would be most different for each server. You have to set the server organ name in
+`localize`.`organ`, and set the player-visible server address in `localize`.`address`. Players will be transferred to
+the tissue using the `localize`.`address` in that tissue as the server address (the port is detected from
+server.properties, so no need to set it here), so don't use an internal IP address here (Hormones will raise a warning
+if you do so). Here, you may want to use a user-friendly domain name instead of the raw IP address (the numbers).
+
+Note that the server address is only visible to users under certain circumstances (e.g. using the /servers command), and
+you can still disallow this by managing the permissions. However, note that the server addresses must be sent to the
+client when they are being transferred, and this may become visible to users through client mods, so don't rely on
+such permissions. To prevent players from exploiting this, you may have a look at
+[transferOnly](#transferonly).
+
+## Features
+#### Load balancing
+Since all tissues in the same organ should have the same function in the network, it is reasonable that a player gets
+transferred to any other tissue in the network. Preferrably, it is the tissue with the most empty slots (or the server
+with the lowest % online players). Set the `balancer`.`enabled` in config.yml to `true`, and when the number of players
+on the server reach the limit in `balancer`.`playerSoftLimit`, players trying to join the server will be transferred to
+the most empty tissue in the organ. If all tissues in the organ are currently full, the player will be kicked.
+
+Players whose name is listed in `balancer`.`exemptPlayers` will be exempted from this kind of transfer. You may want to
+put the names of your server operators here.
+
+<!-- TODO feature: exempt internally transferred players -->
+
+#### Summed player count
+In the MCPE server list screen, the number of online players and slots for each server is shown. With Hormones, you may
+change this value to show the total in the organ, or the total in the network. You can customize this through changing
+the `balancer`.`queryPlayerCount` to `tissue` (default), `organ` (total in the organ) or `network` (total in the
+network).
 
 ## Features
 * Network administration / moderation
@@ -157,9 +212,9 @@ case-insensitive. Characters other than a-z, 0-9 and `.` are ignored. The follow
 | m | Minute | 60 seconds |
 | min | Minute | 60 seconds |
 | minute | Minute | 60 seconds |
-| s | Second | (common sense) |
-| sec | Second | (common sense) |
-| second | Second | (common sense) |
+| s | Second | one system-clock second |
+| sec | Second | one system-clock second |
+| second | Second | one system-clock second |
 
 Don't ask me why I put "millennium" there. Some judges have a strange sense of favour of imprisoning criminals for 300
 years rather than life imprisonment.
