@@ -39,25 +39,104 @@ class DatabaseSetup{
 	public static function setupDatabase(MysqlCredentials $cred, HormonesPlugin $plugin, &$organId) : bool{
 		$plugin->getLogger()->debug("Checking database...");
 		$mysqli = $cred->newMysqli();
-		$mysqli->query("CREATE TABLE IF NOT EXISTS hormones_metadata (name VARCHAR(20) PRIMARY KEY, val VARCHAR(20))");
+		$mysqli->query(/** @lang MySQL */
+			"CREATE TABLE IF NOT EXISTS hormones_metadata (name VARCHAR(20) PRIMARY KEY, val VARCHAR(20))");
 
-		$mysqli->query("LOCK TABLES hormones_metadata WRITE, hormones_organs WRITE, hormones_blood WRITE, hormones_tissues WRITE, hormones_mod_banlist WRITE"); // this should lock all startup operations by Hormones
+		$mysqli->query(/** @lang MySQL */
+			"LOCK TABLES hormones_metadata WRITE, hormones_organs WRITE, hormones_blood WRITE, hormones_tissues WRITE"); // this should lock all startup operations by Hormones
 
 		$result = MysqlResult::executeQuery($mysqli, "SELECT val FROM hormones_metadata WHERE name = ?", [["s", "version"]]);
 		if($result instanceof MysqlSelectResult and count($result->rows) > 0){
 			$version = (int) $result->rows[0]["val"];
 			if($version < HormonesPlugin::DATABASE_VERSION){
 				$plugin->getLogger()->notice("Updating the database! Other servers in the network might become incompatible and require updating.");
-				$hormone = new VerifyDatabaseVersionHormone;
-				$hormone->pluginVersion = $plugin->getDescription()->getVersion();
-				$hormone->dbVersion = HormonesPlugin::DATABASE_VERSION;
 
-				// TODO update database
-				// NOTE handle compatibility and concurrency issues with loaded servers, probably by firing a StopServerHormone or CheckCompatibilityHormone, or explicitly shutdown specified servers
+				$major = $version >> 16;
+				$minor = $version & 0xFFFF;
 
-				$mysqli->query("UPDATE hormones_metadata SET val = ? WHERE name = ?", [["s", HormonesPlugin::DATABASE_VERSION], ["s", "version"]]);
+				if($major === HormonesPlugin::DATABASE_MAJOR_VERSION){
+					if($minor <= 0){
+						foreach([
+							        /** @lang MySQL */
+							        "SET FOREIGN_KEY_CHECKS=0",
+							        /** @lang MySQL */
+							        "ALTER TABLE hormones_organs MODIFY organId TINYINT UNSIGNED NOT NULL",
+							        /** @lang MySQL */
+							        "SET FOREIGN_KEY_CHECKS=1",
+							        /** @lang MySQL */
+							        "CREATE FUNCTION organ_name_to_id(inName VARCHAR(64))
+										RETURNS TINYINT
+									DETERMINISTIC
+										BEGIN
+											DECLARE id TINYINT UNSIGNED;
+											DECLARE empty_id TINYINT UNSIGNED;
+									
+											SELECT organId
+											INTO @id
+											FROM hormones_organs
+											WHERE hormones_organs.name = inName;
+											IF ROW_COUNT() = 1
+											THEN
+												-- just select, no need to change stuff
+												RETURN @id;
+											ELSE
+												IF (SELECT COUNT(*)
+												    FROM hormones_organs) = 64
+												THEN
+													-- table full, try to empty some rows
+													DELETE FROM hormones_organs
+													WHERE NOT EXISTS(SELECT tissueId
+													                 FROM hormones_tissues
+													                 WHERE hormones_tissues.organId = hormones_organs.organId);
+													IF ROW_COUNT() = 0
+													THEN
+														SIGNAL SQLSTATE '45000'
+														SET MESSAGE_TEXT = 'Too many organs; consider deleting unused ones';
+													END IF;
+												END IF;
+												-- find the first empty row
+												IF NOT EXISTS(SELECT name
+												              FROM hormones_organs
+												              WHERE hormones_organs.organId = 0)
+												THEN
+													-- our gap-finding query doesn't work if 0 i
+													INSERT INTO hormones_organs (organId, name) VALUES (0, inName);
+													RETURN 0;
+												ELSE
+													-- detect gaps
+													SELECT (t1.organId + 1)
+													INTO @empty_id
+													FROM hormones_organs t1 LEFT JOIN hormones_organs t2 ON t2.organId = t1.organId + 1
+													WHERE t2.organId IS NULL
+													ORDER BY t1.organId ASC
+													LIMIT 1;
+													IF ROW_COUNT() = 1
+													THEN
+														INSERT INTO hormones_organs (organId, name) VALUES (@empty_id, inName);
+														RETURN @empty_id;
+													ELSE
+														SIGNAL SQLSTATE '45000'
+														SET MESSAGE_TEXT = 'Assertion error: organ count is not 64, but no gaps found and organId=0 is not null';
+													END IF;
+												END IF;
+											END IF;
+										END"
+						        ] as $query){
+							$mysqli->query($query);
+						}
+					}
+
+					MysqlResult::executeQuery($mysqli, /** @lang MySQL */
+						"UPDATE hormones_metadata SET val = ? WHERE name = ?", [["s", HormonesPlugin::DATABASE_VERSION], ["s", "version"]]);
+				}else{
+					// TODO update
+					$hormone = new VerifyDatabaseVersionHormone;
+					$hormone->pluginVersion = $plugin->getDescription()->getVersion();
+					$hormone->dbVersion = HormonesPlugin::DATABASE_VERSION;
+					$hormone->release($plugin);
+				}
 			}elseif($version > HormonesPlugin::DATABASE_VERSION){
-				$plugin->getLogger()->critical("Plugin is outdated");
+				$plugin->getLogger()->critical("Please update the plugin! (You already updated it on some other servers)");
 				$plugin->getServer()->getPluginManager()->disablePlugin($plugin);
 				return false;
 			}else{
@@ -75,20 +154,16 @@ class DatabaseSetup{
 		}
 
 		$organName = $plugin->getConfig()->getNested("localize.organ");
-		$result = MysqlResult::executeQuery($mysqli, "SELECT organId FROM hormones_organs WHERE name = ?", [["s", $organName]]);
+		$result = MysqlResult::executeQuery($mysqli, /** @lang MySQL */
+			"SELECT organ_name_to_id(?) organId", [["s", $organName]]);
 		if($result instanceof MysqlSelectResult and isset($result->rows[0])){
 			$organId = (int) $result->rows[0]["organId"];
+			$plugin->getLogger()->debug("Evaluated organ ID for $organName: $organId");
 		}else{
-			$result = MysqlResult::executeQuery($mysqli, "INSERT INTO hormones_organs (name) VALUES (?)", [["s", $organName]]);
-			if($result instanceof MysqlSuccessResult){
-				$organId = (int) $result->insertId;
-			}else{
-				assert($result instanceof MysqlErrorResult);
-				throw $result->getException();
-			}
+			throw new \RuntimeException("Failed to retrieve organ ID");
 		}
 
-		$mysqli->query("UNLOCK TABLES");
+		$mysqli->query(/** @lang MySQL */"UNLOCK TABLES");
 
 		PingMysqlTask::init($plugin, $cred);
 
@@ -104,7 +179,7 @@ class DatabaseSetup{
 			);",
 			/** @lang MySQL */
 			"CREATE TABLE IF NOT EXISTS hormones_organs (
-				organId TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+				organId TINYINT UNSIGNED PRIMARY KEY,
 				name VARCHAR(64) UNIQUE
 			) AUTO_INCREMENT = 0;",
 			/** @lang MySQL */
@@ -116,15 +191,20 @@ class DatabaseSetup{
 				END IF;
 			END",
 			/** @lang MySQL */
-			/*"CREATE FUNCTION organ_name_to_id(inName VARCHAR(64))
+			"CREATE FUNCTION organ_name_to_id(inName VARCHAR(64))
 				RETURNS TINYINT
 			DETERMINISTIC
 				BEGIN
-					-- just select, no need to change stuff
-					IF EXISTS(SELECT @id := organId
-					          FROM hormones_organs
-					          WHERE hormones_organs.name = inName)
+					DECLARE id TINYINT UNSIGNED;
+					DECLARE empty_id TINYINT UNSIGNED;
+			
+					SELECT organId
+					INTO @id
+					FROM hormones_organs
+					WHERE hormones_organs.name = inName;
+					IF ROW_COUNT() = 1
 					THEN
+						-- just select, no need to change stuff
 						RETURN @id;
 					ELSE
 						IF (SELECT COUNT(*)
@@ -142,22 +222,24 @@ class DatabaseSetup{
 							END IF;
 						END IF;
 						-- find the first empty row
-						IF EXISTS(SELECT name
-						          FROM hormones_organs
-						          WHERE hormones_organs.organId = 0)
+						IF NOT EXISTS(SELECT name
+						              FROM hormones_organs
+						              WHERE hormones_organs.organId = 0)
 						THEN
 							-- our gap-finding query doesn't work if 0 i
 							INSERT INTO hormones_organs (organId, name) VALUES (0, inName);
 							RETURN 0;
 						ELSE
-							IF EXISTS(
-								SELECT @empty_id := t1.organId + 1 empty_id
-								FROM hormones_organs t1 LEFT JOIN hormones_organs t2 ON t2.organId = t1.organId + 1
-								HAVING hormones_organs.organId IS NULL
-								ORDER BY t1.organId ASC
-								LIMIT 1
-							)
+							-- detect gaps
+							SELECT (t1.organId + 1)
+							INTO @empty_id
+							FROM hormones_organs t1 LEFT JOIN hormones_organs t2 ON t2.organId = t1.organId + 1
+							WHERE t2.organId IS NULL
+							ORDER BY t1.organId ASC
+							LIMIT 1;
+							IF ROW_COUNT() = 1
 							THEN
+								INSERT INTO hormones_organs (organId, name) VALUES (@empty_id, inName);
 								RETURN @empty_id;
 							ELSE
 								SIGNAL SQLSTATE '45000'
@@ -165,7 +247,7 @@ class DatabaseSetup{
 							END IF;
 						END IF;
 					END IF;
-				END",*/
+				END",
 			/** @lang MySQL */
 			"CREATE TABLE IF NOT EXISTS hormones_blood (
 				hormoneId BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,

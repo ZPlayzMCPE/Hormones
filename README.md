@@ -76,7 +76,9 @@ When a hormone is released, it is inserted as a row in the `hormones_blood` tabl
 several for all online tissues to download the new hormone, so it's inappropriate to delete the hormone immediately
 after it's inserted.
 
-There are also some hormones that have a longer lifetime; such hormones would be received every time a tissue starts until they have expired. (Other hormones expire immediately after insertion)
+###### Lingering hormone
+There are also some "lingering" hormones, which have a longer lifetime. Lingering hormones would be handled every time a
+tissue starts until they have expired. (Non-lingering hormones expire immediately after insertion)
 
 ##### Kidney
 The kidney is a tool to clean up the database to delete expired hormones (at least several seconds or minutes after
@@ -111,11 +113,23 @@ if you do so). Here, you may want to use a user-friendly domain name instead of 
 Note that the server address is only visible to users under certain circumstances (e.g. using the /servers command), and
 you can still disallow this by managing the permissions. However, note that the server addresses must be sent to the
 client when they are being transferred, and this may become visible to users through client mods, so don't rely on
-such permissions. To prevent players from exploiting this, you may have a look at
-[transferOnly](#transferonly).
+such permissions. To prevent players from exploiting this, you may have a look at [transferOnly](#transferonly).
+
+The `kidney` section is very technical. Leaving its settings as default is already OK.
+
+For other config values, they are related to more specific Hormones features, which will be explained in the [Features](#features) section below.
+
+### Updating database
+Hormones almost does all the database setup for you. Apart from creating a schema for Hormones to
+connect to, you don't even need to connect to MySQL manually.
+
+After updating Hormones by replacing the phar file in the plugins folder, if something in the database needs to be
+changed, Hormones will detect it automatically. If this is a backwards-incompatible update, i.e. older versions of
+Hormones cannot work together with the updated database, they will automatically shutdown.
 
 ## Features
-#### Load balancing
+### Load balancing
+#### Full transfer
 Since all tissues in the same organ should have the same function in the network, it is reasonable that a player gets
 transferred to any other tissue in the network. Preferrably, it is the tissue with the most empty slots (or the server
 with the lowest % online players). Set the `balancer`.`enabled` in config.yml to `true`, and when the number of players
@@ -123,9 +137,36 @@ on the server reach the limit in `balancer`.`playerSoftLimit`, players trying to
 the most empty tissue in the organ. If all tissues in the organ are currently full, the player will be kicked.
 
 Players whose name is listed in `balancer`.`exemptPlayers` will be exempted from this kind of transfer. You may want to
-put the names of your server operators here.
+put the names of your server ops here.
+
+Server-full transfer does not do anything with the `max-players` option in server.properties. If you want to allow the
+exempted players join the server,
+
+###### FAQ: Can I integrate exemptPlayers with permissions?
+It is not practical. Full-transfer is executed when the player just connected, even before permission manager plugins
+like PurePerms setup the player's permissions. Players must be transferred as soon as possible to prevent sending
+unnecessary data to the player, which contradicts with the initiatives of "load balancing".
 
 <!-- TODO feature: exempt internally transferred players -->
+<!-- TODO feature: joinTransfer -->
+<!-- TODO feature: stopTransfer -->
+
+#### Organic transfer
+Conventionally, players are transferred to another server upon actions like typing a command, clicking on a sign, etc.
+to enter another part of the network, e.g. hub server :arrow_right: a skyblock server. However, this is inefficient in
+a system like Hormones, because some servers might easily get overcrowded.
+
+Hormones provides a command interface for transferring to the most empty tissue in an organ. This is controlled by the
+`organicTransfer`.`mode` option in config.yml. If it is set to `group`, the `/ot` (`/organic-transfer`) command will be
+registered, accepting an organ name as the argument. For example, running the command `/ot lobby` will transfer yourself
+to the `lobby` organ. If `organicTransfer`.`mode` is set to `direct`, the organ name will be the command name. For
+example, running `/lobby` will transfer yourself to the lobby.
+
+You can also execute the commands to transfer other players. If `organicTransfer`.`mode` is set to `group`, put the
+player name before the organ name, e.g. `/ot Steve lobby`. If it is set to `direct`, simply put the player name as
+the argument, e.g. `/lobby Steve`.
+
+This command would be very useful when used together with [TapToDo](https://poggit.pmmp.io/p/TapToDo).
 
 #### Summed player count
 In the MCPE server list screen, the number of online players and slots for each server is shown. With Hormones, you may
@@ -133,23 +174,42 @@ change this value to show the total in the organ, or the total in the network. Y
 the `balancer`.`queryPlayerCount` to `tissue` (default), `organ` (total in the organ) or `network` (total in the
 network).
 
-## Features
-* Network administration / moderation
-    * Check the status of the network using /hormones
-    * List all online servers using /servers
-    * Stop all online servers using /nstop
-    * Broadcast a message to all servers in the _network_ using /nsay
-    * Broadcast a message to all servers in the _organ_ using /osay
-    * Mute players of a certain name/from a certain IP in the network/tissue using /nmute
-    * Ban players of a certain name/from a certain IP in the network/tissue using /nban
-* Load balancing
-    * When a player joins a full server, he would be transferred to another server of the same type.
-    * Transfer to the most available server of a given organ using /{organ name}
+### Administration
+#### Broadcasting
+You can broadcast a message in all tissues in the network or the current organ using the /nsay and /osay commands
+respectively.
+
+#### Restarting network
+You can restart all tissues in the network with `/stop-all` (or `/nstop`).
+
+#### Tissue list
+The `/tissues` (or `/servers`) command lists all online tissues, groups them by organs and shows their online status.
+
+#### Hormones status
+The `/hormones` command shows the network status and stats for nerds of a tissue.
+
+### Moderation
+Hormones hosts a shared mute/ban list on the MySQL database using lingering hormones. Such records are permanently
+deleted after the expiration of the mute/ban period.
+
+Players who are muted cannot chat normally. Using commands, including the /tell command (if they have such permission),
+is not affected.
+
+Players who are banned cannot join the server. However, if the `moderation`.`banTransfer` is set to a string (in YAML,
+`false` is a keyword and is not a string; if you want to make sure it's a string, enclose the text with double quotes
+`""`), banned players will be transferred to the organ named in the `moderation`.`banTransfer` option.
+
+Mutes and bans identify players with the case-insensitive name and the current IP of the player at the moment they are
+banned/muted. If players with the same case-insensitive name or the same IP join the network again, they are also
+banned/muted.
+
+Hormones supports "sectional moderators" &mdash; If a player only has the permission nodes for sectional moderation but
+not that for global moderation, the bans/mutes issued by that moderator is only effective in the organ of the tissue
+where the command was executed.
 
 <!--
 * Single-session control
 * Transfer whitelist
-* NetChat
 -->
 
 ## Command usage
@@ -167,17 +227,9 @@ required, while arguments bracketed with `[` `]` are optional.
 | /nsay | Broadcast a message to all players, or players with a certain permission, in the network | `/nsay [perm] <message ...>` |
 | /osay | Broadcast a message to all players, or players with a certain permission, in the organ | `/osay [perm] <message ...>` |
 
-If `organicTransfer.mode` in config.yml is set to `direct`, There are also an arbitrary number of commands for
-transferring to other organs. For example, if you have an organ called `pvp`, players can type the `/pvp` command to
-transfer to the most empty `pvp` server. If the command `/pvp` is registered by another plugin, players can type
-`/organ:pvp` instead.
+There are also transferring commands defined according to `organicTransfer.mode` in config.yml. Refer to the [Organic Transfer](#organic-transfer) section above.
 
-If `organicTransfer.mode` is set to `off`, no such commands will be registered.
-
-If `organicTransfer.mode` is set to `group`, a command `/organic-transfer` (alias: /ot) will be registered. If you have
-an organ called `pvp`, players can type `/ot pvp` to transfer to the most empty `pvp` server.
-
-### Remarks
+##### Remarks
 `<player>` refers to the name of an _online_ player. It is case-insensitive. If you only type the first few characters
 of the player's name, the online player with the shortest name starting with these characters will be chosen.
 
@@ -212,19 +264,28 @@ case-insensitive. Characters other than a-z, 0-9 and `.` are ignored. The follow
 | m | Minute | 60 seconds |
 | min | Minute | 60 seconds |
 | minute | Minute | 60 seconds |
-| s | Second | one system-clock second |
-| sec | Second | one system-clock second |
-| second | Second | one system-clock second |
+| s | Second | one system clock second |
+| sec | Second | one system clock second |
+| second | Second | one system clock second |
 
 Don't ask me why I put "millennium" there. Some judges have a strange sense of favour of imprisoning criminals for 300
 years rather than life imprisonment.
 
 ## Running this plugin
-Please use the latest build from [Poggit-CI](https://poggit.pmmp.io/ci/LegendOfMCPE/Hormones/~).
+Use the latest version from [Poggit](https://poggit.pmmp.io/p/Hormones).
 
-This plugin uses the Poggit virion system. To run this plugin from source for testing, provide the required virions in
-the runtime using instructions from [the virion framework documentation](https://github.com/poggit/support/blob/master/virion.md).
+Development builds can be found from [Poggit-CI](https://poggit.pmmp.io/ci/LegendOfMCPE/Hormones/~).
+
+This plugin uses the Poggit virion system. To run this plugin from source for testing, provide the
+[required virions](#third-party-software-used) in the runtime using instructions from
+[the virion framework documentation](https://github.com/poggit/support/blob/master/virion.md).
 
 ## Third-party software used
 * This plugin uses the library [libasynql](https://github.com/poggit/libasynql) by @poggit.
 * This plugin uses the library [spoondetector](https://github.com/Falkirks/spoondetector) by @Falkirks.
+
+## Contact
+Shall you need a human, join our Gitter chat. [![Join the chat at https://gitter.im/LegendOfMCPE/Hormones](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/LegendOfMCPE/Hormones?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+If you have found a bug, please [create an issue on GitHub](https://github.com/LegendOfMCPE/Hormones/issues). make sure
+not to submit duplicate bugs.
