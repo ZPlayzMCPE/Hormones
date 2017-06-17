@@ -49,6 +49,8 @@ class HormonesPlugin extends PluginBase{
 
 	/** @var Config|null */
 	private $myConfig;
+	/** @var \mysqli */
+	private $mysqli;
 
 	/** @var MysqlCredentials */
 	private $credentials;
@@ -102,9 +104,14 @@ class HormonesPlugin extends PluginBase{
 			$this->getServer()->getPluginManager()->disablePlugin($this);
 			return;
 		}
+		if(strtolower($this->getConfig()->getNested("localize.organ")) === "last"){
+			$this->getLogger()->critical("\"last\" is an invalid organ name!");
+			$this->getServer()->getPluginManager()->disablePlugin($this);
+		}
 
 		$this->credentials = $cred = MysqlCredentials::fromArray($this->getConfig()->get("mysql"));
-		if(!DatabaseSetup::setupDatabase($cred, $this, $organId)){
+		$this->mysqli = $cred->newMysqli();
+		if(!DatabaseSetup::setupDatabase($cred, $this, $organId, $this->mysqli)){
 			$this->getServer()->getPluginManager()->disablePlugin($this);
 			return;
 		}
@@ -167,6 +174,7 @@ class HormonesPlugin extends PluginBase{
 	}
 
 	public function onDisable(){
+		$this->getBalancerModule()->onDisable();
 		ClearMysqlTask::closeAll($this, $this->getCredentials());
 	}
 
@@ -175,6 +183,10 @@ class HormonesPlugin extends PluginBase{
 			$this->myConfig = new Config($this->getDataFolder() . "config.yml");
 		}
 		return $this->myConfig;
+	}
+
+	public function connectMainThreadMysql() : \mysqli{
+		return $this->mysqli;
 	}
 
 	private function calcServerId(){

@@ -71,7 +71,8 @@ class LymphVessel extends QueryMysqlTask{
 		$stmt->execute();
 		$stmt->close();
 
-		$statResult = MysqlResult::executeQuery($mysqli, "SELECT tissues, online, total, organId IS NULL isRollup FROM
+		$statResult = MysqlResult::executeQuery($mysqli, /** @lang MySQL */
+			"SELECT tissues, online, total, organId IS NULL isRollup FROM
 			(SELECT organId, COUNT(*) tissues, IFNULL(SUM(usedSlots), 0) online, IFNULL(SUM(maxSlots), 0) total
 				FROM hormones_tissues WHERE UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 GROUP BY organId WITH ROLLUP) t
 			WHERE organId IS NULL OR organId = ?",

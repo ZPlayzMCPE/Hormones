@@ -17,7 +17,7 @@ declare(strict_types=1);
 
 namespace Hormones\Commands;
 
-use libasynql\MysqlCredentials;
+use Hormones\HormonesPlugin;
 use libasynql\QueryMysqlTask;
 use libasynql\result\MysqlErrorResult;
 use libasynql\result\MysqlResult;
@@ -28,12 +28,12 @@ use pocketmine\utils\TextFormat;
 
 class FindOrganicTissueTask extends QueryMysqlTask{
 	/** @var string */
-	private $organName;
+	protected $organName;
 	/** @var int|null */
-	private $organId;
+	protected $organId;
 
-	public function __construct(MysqlCredentials $credentials, Player $player, string $organName, int $organId = null, callable $onUnknownOrgan = null, callable $onServersFull = null){
-		parent::__construct($credentials, [$player, $onUnknownOrgan, $onServersFull]);
+	public function __construct(HormonesPlugin $plugin, Player $player, string $organName, int $organId = null, callable $onUnknownOrgan = null, callable $onServersFull = null){
+		parent::__construct($plugin->getCredentials(), [$plugin, $player, $onUnknownOrgan, $onServersFull]);
 		$this->organName = $organName;
 		$this->organId = $organId;
 	}
@@ -60,16 +60,18 @@ class FindOrganicTissueTask extends QueryMysqlTask{
 	}
 
 	public function onCompletion(Server $server){
+		/** @var HormonesPlugin $plugin */
 		/** @var Player $player */
 		/** @var callable|null $onUnknownOrgan */
 		/** @var callable|null $onServersFull */
-		list($player, $onUnknownOrgan, $onServersFull) = $this->fetchLocal($server);
-		if(!$player->isOnline()){
+		list($plugin, $player, $onUnknownOrgan, $onServersFull) = $this->fetchLocal($server);
+		if(!$plugin->isEnabled() || !$player->isOnline()){
 			return;
 		}
 
 		$result = $this->getResult();
 		if($result === true){
+			assert(is_callable($onUnknownOrgan));
 			$onUnknownOrgan();
 			return;
 		}elseif($result instanceof MysqlSelectResult){

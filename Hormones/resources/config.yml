@@ -17,6 +17,7 @@ localize:
   # The type name of the server. Can be anything you want.
   # If balancer is enabled, players may be transferred to other servers of the same organ (case-insensitive) if server full.
   # Organ names should only consist of alphabets, numbers and hyphens [A-Za-z0-9-] to fit as command arguments, command names and permission names
+  # Note that "last" is an invalid organ name.
   organ: normal
   # Set a unique name for this server, merely for displaying to users. Writing "auto" will be replaced by the server IP + port.
   # If you don't wish to make the server IP so obvious, you may use other
@@ -46,18 +47,44 @@ organicTransfer:
   mode: group
 
 balancer:
-  # This will only prevent transferring players to other tissues. Other tissues of the same organ ID may still transfer players to this tissue.
-  enabled: true
-  # Normal number of slots. Special players can bypass this limit but are still limited by the max-players in server.properties
-  # If the soft limit is reached, normal players will be transferred to another server with the most empty slots.
-  playerSoftLimit: 18
-  # List of players (usernames, case-insensitive) who can bypass the soft limit.
-  exemptPlayers:
-  - Steve
-
   # Show network/organic player count instead of tissue-local player count in the client server list screen
   # Options: tissue, organic, network
   queryPlayerCount: organic
+
+  # If fullTransfer is set to true, when player count exceeds that in balancer.playerSoftLimit, new players will be
+  # transferred to other tissues in this organ
+  fullTransfer: true
+  # Normal number of slots. Special players can bypass this limit but are still limited by max-players in server.properties
+  # If the soft limit is reached, normal players will be transferred to another server with the most empty slots.
+  playerSoftLimit: 18
+  # List of players (usernames, case-insensitive) who can bypass the soft limit.
+  fullExemptPlayers:
+  - a player name here
+  - more player names here
+
+  # If stopTransfer is set to true, when the server stops, online players will be transferred to other tissues in the
+  # organ instead of getting kicked.
+  stopTransfer: false
+
+  # Change this to an organ name, then all players joining this server will be redirected to a tissue in the specified
+  # organ.
+  # Set this to "last" to transfer to any of the tissues in the organ the player last joined
+  alwaysTransfer: false
+  # List of players (usernames, case-insensitive) who won't be transferred by alwaysTransfer
+  alwaysExemptPlayers:
+  - a player name here
+  - more player names here
+  # Enable alwaysKick to kick the player if alwaysTransfer is set to an organ name but all tissues in that organ are full.
+  alwaysKick: false
+  # The name of the organ to transfer the player to if alwaysTransfer is set as "last" and the player has never joined
+  # any organs with balancer.logLast enabled, or if all tissues in the last-joined organ are full.
+  # If this transfer still fails and alwaysKick is enabled, the player will be kicked.
+  # Leaving as false will let players stay on this tissue.
+  alwaysFallback: false
+  # If set to true, the next time a player joins a tissue with balancer.alwaysTransfer set to "last", it will transfer
+  # the player to tissues in this organ.
+  # If set to false, the player will still be transferred to the last tissue with balancer.logLast set to true.
+  logLast: true
 
 # Moderation settings
 moderation:

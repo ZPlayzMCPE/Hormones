@@ -33,12 +33,12 @@ class DatabaseSetup{
 	 * @param MysqlCredentials $cred
 	 * @param HormonesPlugin   $plugin
 	 * @param int              &$organId
+	 * @param \mysqli|null     $mysqli
 	 *
 	 * @return bool
 	 */
-	public static function setupDatabase(MysqlCredentials $cred, HormonesPlugin $plugin, &$organId) : bool{
+	public static function setupDatabase(MysqlCredentials $cred, HormonesPlugin $plugin, &$organId, \mysqli $mysqli) : bool{
 		$plugin->getLogger()->debug("Checking database...");
-		$mysqli = $cred->newMysqli();
 		$mysqli->query("CREATE TABLE IF NOT EXISTS hormones_metadata (name VARCHAR(20) PRIMARY KEY, val VARCHAR(20))");
 
 		$mysqli->query("LOCK TABLES hormones_metadata WRITE, hormones_organs WRITE, hormones_blood WRITE, hormones_tissues WRITE, hormones_mod_banlist WRITE"); // this should lock all startup operations by Hormones

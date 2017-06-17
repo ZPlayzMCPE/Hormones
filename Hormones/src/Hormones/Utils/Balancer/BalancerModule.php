@@ -17,23 +17,102 @@ declare(strict_types=1);
 
 namespace Hormones\Utils\Balancer;
 
+use Hormones\Commands\FindOrganicTissueTask;
 use Hormones\HormonesPlugin;
 use Hormones\Utils\Balancer\Event\PlayerBalancedEvent;
+use libasynql\result\MysqlErrorResult;
+use libasynql\result\MysqlResult;
+use libasynql\result\MysqlSelectResult;
 use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\server\QueryRegenerateEvent;
 
 class BalancerModule implements Listener{
 	private $plugin;
+
+	/** @var string */
+	private $queryPlayerCount;
+
+	/** @var bool */
+	private $fullTransfer;
+	/** @var int */
+	private $fullLimit;
 	/** @var string[] */
-	private $exempts;
+	private $fullExempts;
+
+	/** @var bool */
+	private $stopTransfer;
+
+	/** @var string|null */
+	private $alwaysTransferName;
+	/** @var int */
+	private $alwaysTransferOrgan;
+	/** @var bool */
+	private $alwaysKick;
+	/** @var string[] */
+	private $alwaysExempts;
+	/** @var string|null */
+	private $alwaysFallbackName;
+	/** @var int */
+	private $alwaysFallbackOrgan;
+	/** @var bool */
+	private $logLast;
 
 	public function __construct(HormonesPlugin $plugin){
 		$this->plugin = $plugin;
-		$this->exempts = array_fill_keys(array_map("strtolower", $this->getPlugin()->getConfig()->getNested("balancer.exemptPlayers")), true);
-		if($plugin->getConfig()->getNested("balancer.enabled", true)){
-			$this->getPlugin()->getServer()->getPluginManager()->registerEvents($this, $plugin);
+
+		$this->queryPlayerCount = strtolower($this->getPlugin()->getConfig()->getNested("balancer.queryPlayerCount", "organic"));
+
+		$this->fullTransfer = (bool) $this->getPlugin()->getConfig()->getNested("balancer.fullTransfer", $this->getPlugin()->getConfig()->getNested("balancer.enabled", true));
+		$this->fullLimit = (int) $this->getPlugin()->getConfig()->getNested("balancer.playerSoftLimit", 18);
+		$this->fullExempts = array_fill_keys(array_map("strtolower",
+			$this->getPlugin()->getConfig()->getNested("balancer.fullExemptPlayers", $this->getPlugin()->getConfig()->getNested("balancer.exemptPlayers", []))), true);
+
+		$this->stopTransfer = (bool) $this->getPlugin()->getConfig()->getNested("balancer.stopTransfer", false);
+
+		$this->alwaysTransferName = $this->getPlugin()->getConfig()->getNested("balancer.stopTransfer", false);
+		if(!$this->alwaysTransferName){
+			$this->alwaysTransferName = null;
+		}else{
+			$this->alwaysTransferName = strtolower((string) $this->alwaysTransferName);
 		}
+		if($this->alwaysTransferName === null){
+			$this->alwaysTransferOrgan = -1;
+		}elseif($this->alwaysTransferName === "last"){
+			$this->alwaysTransferOrgan = -2;
+		}else{
+			$result = MysqlResult::executeQuery($this->getPlugin()->connectMainThreadMysql(), /** @lang MySQL */
+				"SELECT organId FROM hormones_organs WHERE name = ?", [["s", $this->alwaysTransferName]]);
+			if(!($result instanceof MysqlSelectResult)){
+				assert($result instanceof MysqlErrorResult);
+				throw $result->getException();
+			}
+			if(!isset($result->rows[0])){
+				throw new \RuntimeException("Unknown organ in balancer.alwaysTransfer");
+			}
+			$this->alwaysTransferOrgan = (int) $result->rows[0]["organId"];
+		}
+		$this->alwaysKick = (bool) $this->getPlugin()->getConfig()->getNested("balancer.alwaysKick", false);
+		$this->alwaysExempts = array_fill_keys(array_map("strtolower",
+			$this->getPlugin()->getConfig()->getNested("balancer.alwaysExemptPlayers", [])), true);
+		$this->alwaysFallbackName = $this->getPlugin()->getConfig()->getNested("balancer.alwaysFallback", false) ?: null;
+		if($this->alwaysFallbackName === null){
+			$this->alwaysFallbackOrgan = -1;
+		}else{
+			$result = MysqlResult::executeQuery($this->getPlugin()->connectMainThreadMysql(), /** @lang MySQL */
+				"SELECT organId FROM hormones_organs WHERE name = ?", [["s", $this->alwaysFallbackName]]);
+			if(!($result instanceof MysqlSelectResult)){
+				assert($result instanceof MysqlErrorResult);
+				throw $result->getException();
+			}
+			if(!isset($result->rows[0])){
+				throw new \RuntimeException("Unknown organ in balancer.alwaysFallback");
+			}
+		}
+		$this->logLast = (bool) $this->getPlugin()->getConfig()->getNested("balancer.logLast", true);
+
+		$this->getPlugin()->getServer()->getPluginManager()->registerEvents($this, $plugin);
 	}
 
 	/**
@@ -42,7 +121,7 @@ class BalancerModule implements Listener{
 	 * @priority LOW
 	 */
 	public function e_onQueryRegen(QueryRegenerateEvent $event){
-		switch(strtolower($this->plugin->getConfig()->getNested("balancer.queryPlayerCount", "organic"))){
+		switch($this->getQueryPlayerCountMode()){
 			case "tissue":
 				break;
 			case "organic":
@@ -61,31 +140,139 @@ class BalancerModule implements Listener{
 	 * @priority        HIGH
 	 * @ignoreCancelled true
 	 */
-	public function e_onPreLogin(PlayerLoginEvent $event){
-		// We can't check permissions here because permission plugins have not checked it yet
+	public function e_onLogin(PlayerLoginEvent $event){
+		// We can't check permissions here because permission plugins have not defined them yet
 
-		if(count($this->getPlugin()->getServer()->getOnlinePlayers()) >= $this->getPlugin()->getSoftSlotsLimit()){ // getOnlinePlayers() doesn't include the current player
-			$player = $event->getPlayer();
-			if($this->getPlugin()->getLymphResult()->altServer === null){
-				$event->setCancelled();
-				$event->setKickMessage("All {$this->getPlugin()->getOrganName()} servers are full!");
-				return;
-			}
-			$balEv = new PlayerBalancedEvent($this->getPlugin(), $player, $this->getPlugin()->getLymphResult()->altServer);
-			if(isset($this->exempts[strtolower($player->getName())])){
-				$balEv->setCancelled();
-			}
-			$this->getPlugin()->getServer()->getPluginManager()->callEvent($balEv);
+		$player = $event->getPlayer();
+		if($this->getAlwaysTransferDestination() >= 0 && !$this->hasAlwaysExempt($player->getName())){
+			$task = new FindOrganicTissueTask($this->getPlugin(), $player, $this->getAlwaysTransferDestinationName(), $this->getAlwaysTransferDestination());
+			$this->getPlugin()->getServer()->getScheduler()->scheduleAsyncTask($task);
+		}elseif($this->getAlwaysTransferDestination() === -1 && !$this->hasAlwaysExempt($player->getName())){ // last
+			$task = new FindLastOrganicTissueTask($this, $player);
+			$this->getPlugin()->getServer()->getScheduler()->scheduleAsyncTask($task);
+		}
 
-			if(!$balEv->isCancelled()){
-				$this->getPlugin()->getLogger()->info("Transferring {$player->getName()} to alt server: {$balEv->getTargetServer()->displayName}");
-				$player->transfer($balEv->getTargetServer()->address, $balEv->getTargetServer()->port,
-					"Server full! Transferring you to {$balEv->getTargetServer()->displayName}");
-				$event->setCancelled();
-			}else{
-				$this->getPlugin()->getLogger()->debug("Event cancelled");
+		if($this->isTransferUponFull()){
+			if(count($this->getPlugin()->getServer()->getOnlinePlayers()) >= $this->getFullLimit()){ // getOnlinePlayers() doesn't include the current player
+				if($this->getPlugin()->getLymphResult()->altServer === null){
+					$event->setCancelled();
+					$event->setKickMessage("All {$this->getPlugin()->getOrganName()} servers are full!");
+					return;
+				}
+				$balEv = new PlayerBalancedEvent($this->getPlugin(), $player, $this->getPlugin()->getLymphResult()->altServer);
+				if($this->hasFullExempt($player->getName())){
+					$balEv->setCancelled();
+				}
+				$this->getPlugin()->getServer()->getPluginManager()->callEvent($balEv);
+
+				if(!$balEv->isCancelled()){
+					$this->getPlugin()->getLogger()->info("Transferring {$player->getName()} to alt server: {$balEv->getTargetServer()->displayName}");
+					$player->transfer($balEv->getTargetServer()->address, $balEv->getTargetServer()->port,
+						"Server full! Transferring you to {$balEv->getTargetServer()->displayName}");
+					$event->setCancelled();
+				}else{
+					$this->getPlugin()->getLogger()->debug("Event cancelled");
+				}
 			}
 		}
+	}
+
+	public function e_onJoin(PlayerJoinEvent $event){
+		if($this->logsLast()){
+			// TODO logLast
+		}
+	}
+
+	public function onDisable(){
+		$result = MysqlResult::executeQuery($this->getPlugin()->connectMainThreadMysql(), /** @lang MySQL */
+			"SELECT ip, port, maxSlots, maxSlots - usedSlots availSlots FROM hormones_tissues
+				WHERE organId = ? AND tissueId = ? AND maxSlots - usedSlots > 0
+				ORDER BY availSlots DESC, maxSlots ASC",
+			[["i", $this->getPlugin()->getOrganId()], ["s", $this->getPlugin()->getTissueId()]]);
+		if(!($result instanceof MysqlSelectResult)){
+			assert($result instanceof MysqlErrorResult);
+			throw  $result->getException();
+		}
+		$result->fixTypes([
+			"ip" => MysqlSelectResult::TYPE_STRING,
+			"port" => MysqlSelectResult::TYPE_INT,
+			"maxSlots" => MysqlSelectResult::TYPE_INT,
+			"availSlots" => MysqlSelectResult::TYPE_INT
+		]);
+		$players = $this->getPlugin()->getServer()->getOnlinePlayers();
+		foreach($players as $player){
+			$player->transfer($result->rows[0]["ip"], $result->rows[0]["port"], "Server stop transfer");
+			if((--$result->rows[0]["availSlots"]) === 0){
+				array_shift($result->rows);
+				if(count($result->rows) === 0){
+					break;
+				}
+			}
+		}
+	}
+
+	public function getQueryPlayerCountMode() : string{
+		return $this->queryPlayerCount;
+	}
+
+	public function isTransferUponFull() : bool{
+		return $this->fullTransfer;
+	}
+
+	public function getFullLimit() : int{
+		return $this->fullLimit;
+	}
+
+	/**
+	 * @return string[]
+	 */
+	public function getFullExempts() : array{
+		return $this->fullExempts;
+	}
+
+	public function hasFullExempt(string $name) : bool{
+		return isset($this->fullExempts[strtolower($name)]);
+	}
+
+	public function isTransferUponStop() : bool{
+		return $this->stopTransfer;
+	}
+
+	public function getAlwaysTransferDestination() : int{
+		return $this->alwaysTransferOrgan;
+	}
+
+	/**
+	 * @return string|null
+	 */
+	public function getAlwaysTransferDestinationName(){
+		return $this->alwaysTransferName;
+	}
+
+	/**
+	 * @return string[]
+	 */
+	public function getAlwaysExempts() : array{
+		return $this->alwaysExempts;
+	}
+
+	public function hasAlwaysExempt(string $name) : bool{
+		return isset($this->alwaysExempts[strtolower($name)]);
+	}
+
+	public function getAlwaysFallbackDestination() : int{
+		return $this->alwaysFallbackOrgan;
+	}
+
+	/**
+	 * @return string|null
+	 */
+	public function getAlwaysFallbackName(){
+		return $this->alwaysFallbackName;
+	}
+
+	public function logsLast() : bool{
+		return $this->logLast;
 	}
 
 	public function getPlugin() : HormonesPlugin{

@@ -116,7 +116,7 @@ class SwitchOrganCommand extends HormonesCommand{
 			$organId = $this->organData[$organName];
 		}
 
-		$sender->getServer()->getScheduler()->scheduleAsyncTask(new FindOrganicTissueTask($this->getPlugin()->getCredentials(), $sender, $organName, $organId));
+		$sender->getServer()->getScheduler()->scheduleAsyncTask(new FindOrganicTissueTask($this->getPlugin(), $sender, $organName, $organId));
 		return true;
 	}
 }
