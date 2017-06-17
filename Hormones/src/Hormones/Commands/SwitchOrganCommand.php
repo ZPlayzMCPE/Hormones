@@ -24,6 +24,7 @@ use libasynql\result\MysqlSelectResult;
 use pocketmine\command\CommandSender;
 use pocketmine\permission\Permission;
 use pocketmine\Player;
+use pocketmine\utils\TextFormat;
 
 class SwitchOrganCommand extends HormonesCommand{
 	private $organId;
@@ -58,7 +59,8 @@ class SwitchOrganCommand extends HormonesCommand{
 
 		$parentPerm = $plugin->getServer()->getPluginManager()->getPermission("hormones.player.transfer.organic");
 		if($modeGroup){
-			$cmd = new SwitchOrganCommand($plugin, "organic-transfer", "Transfer to a server in another organ", "/ot <organ name>", ["ot"]);
+			$cmd = new SwitchOrganCommand($plugin, "organic-transfer", "Transfer to a server in another organ", /** @lang text */
+				"/ot [target player] <destination organ>", ["ot"]);
 			$cmd->setPermission($parentPerm->getName());
 			$cmd->organData = [];
 			foreach($result->rows as $row){
@@ -79,7 +81,7 @@ class SwitchOrganCommand extends HormonesCommand{
 				$perm = new Permission("hormones.player.transfer.organic.$organName", "Allows transferring to \"$organName\" servers", Permission::DEFAULT_TRUE);
 				$parentPerm->getChildren()[$perm->getName()] = true;
 				$plugin->getServer()->getPluginManager()->addPermission($perm);
-				$cmd = new SwitchOrganCommand($plugin, $organName, "Transfer to a $organName server", "/$organName");
+				$cmd = new SwitchOrganCommand($plugin, $organName, "Transfer to a $organName server", "/$organName [target player]");
 				$cmd->setPermission($perm->getName());
 				$cmd->organId = $organId;
 				$cmd->organName = $organName;
@@ -92,31 +94,43 @@ class SwitchOrganCommand extends HormonesCommand{
 		if(!$this->testPermission($sender)){
 			return false;
 		}
-		if(!($sender instanceof Player)){
-			$sender->sendMessage("Please run this command as a player");
-			return false;
-		}
 
+		/** @var string|null $target */
+		$target = null;
 		if(isset($this->organId, $this->organName)){
+			$target = array_shift($args);
 			$organId = $this->organId;
 			$organName = $this->organName;
 		}else{
-			// this is the /ot command
 			if(!isset($args[0])){
-				$sender->sendMessage("Usage: /ot <organ name>");
-				$sender->sendMessage("Available organ names: " . implode(", ", array_keys($this->organData)));
+				$sender->sendMessage(TextFormat::RED . "Usage: " . $this->getUsage());
+				$sender->sendMessage(TextFormat::RED . "Available organs: " . implode(", ", array_keys($this->organData)));
 				return false;
 			}
-			$organName = strtolower($args[0]);
-			if(!isset($organName)){
-				$sender->sendMessage("Unknown organ name: $args[0]");
-				$sender->sendMessage("Available organ names: " . implode(", ", array_keys($this->organData)));
+			if(isset($args[1])){
+				$target = array_shift($args);
+			}
+			$organName = strtolower(array_shift($args));
+			if(!isset($this->organData[$organName])){
+				$sender->sendMessage(TextFormat::RED . "Usage: " . $this->getUsage());
+				$sender->sendMessage(TextFormat::RED . "Unknown organ: $organName");
+				$sender->sendMessage(TextFormat::RED . "Available organs: " . implode(", ", array_keys($this->organData)));
 				return false;
 			}
 			$organId = $this->organData[$organName];
 		}
 
-		$sender->getServer()->getScheduler()->scheduleAsyncTask(new FindOrganicTissueTask($this->getPlugin(), $sender, $organName, $organId));
+		if($target === null and !($sender instanceof Player)){
+			$sender->sendMessage(TextFormat::RED . "Please run this command as a player, or specify a target: " . $this->getUsage());
+			return false;
+		}
+
+		if($target !== null){
+			$targetPlayer = $this->getPlugin()->getServer()->getPlayer($target);
+		}else{
+			$targetPlayer = $sender;
+		}
+		$sender->getServer()->getScheduler()->scheduleAsyncTask(new FindOrganicTissueTask($this->getPlugin(), $targetPlayer, $organName, $organId));
 		return true;
 	}
 }

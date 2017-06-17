@@ -43,7 +43,7 @@ use spoondetector\SpoonDetector;
 
 class HormonesPlugin extends PluginBase{
 	const DATABASE_MAJOR_VERSION = 1; // only to be bumped if backwards-incompatible
-	const DATABASE_MINOR_VERSION = 0; // only to be bumped if plugin cannot work with last database
+	const DATABASE_MINOR_VERSION = 1; // only to be bumped if plugin cannot work with last database
 
 	const DATABASE_VERSION = (HormonesPlugin::DATABASE_MAJOR_VERSION << 16) | (HormonesPlugin::DATABASE_MINOR_VERSION << 0);
 
@@ -190,8 +190,7 @@ class HormonesPlugin extends PluginBase{
 	}
 
 	private function calcServerId(){
-		return md5($this->getServer()->getDataPath() . $this->getServer()->getIp() . $this->getServer()->getPort() .
-			$this->getConfig()->getNested("localize.name", "auto"));
+		return md5($this->getServer()->getDataPath() . $this->getServer()->getIp() . $this->getServer()->getPort() . Utils::getMachineUniqueId()->toString());
 	}
 
 	public function getTissueId(){
