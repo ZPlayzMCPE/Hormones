@@ -60,11 +60,11 @@ DETERMINISTIC
 				RETURN 0;
 			ELSE
 				-- detect gaps
-				SELECT (t1.organId + 1)
+				SELECT (hormones_organs.organId + 1)
 				INTO @empty_id
-				FROM hormones_organs t1 LEFT JOIN hormones_organs t2 ON t2.organId = t1.organId + 1
-				WHERE t2.organId IS NULL
-				ORDER BY t1.organId ASC
+				FROM hormones_organs LEFT JOIN hormones_organs organs_2 ON organs_2.organId = hormones_organs.organId + 1
+				WHERE organs_2.organId IS NULL
+				ORDER BY hormones_organs.organId ASC
 				LIMIT 1;
 				IF ROW_COUNT() = 1
 				THEN

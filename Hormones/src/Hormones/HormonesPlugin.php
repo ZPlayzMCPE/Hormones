@@ -174,7 +174,9 @@ class HormonesPlugin extends PluginBase{
 	}
 
 	public function onDisable(){
-		$this->getBalancerModule()->onDisable();
+		if(isset($this->balancerModule)){
+			$this->getBalancerModule()->onDisable();
+		}
 		ClearMysqlTask::closeAll($this, $this->getCredentials());
 	}
 
