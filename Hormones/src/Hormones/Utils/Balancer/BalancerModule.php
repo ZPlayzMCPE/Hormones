@@ -27,6 +27,7 @@ use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\server\QueryRegenerateEvent;
+use pocketmine\Player;
 
 class BalancerModule implements Listener{
 	private $plugin;
@@ -186,7 +187,7 @@ class BalancerModule implements Listener{
 	public function onDisable(){
 		$result = MysqlResult::executeQuery($this->getPlugin()->connectMainThreadMysql(), /** @lang MySQL */
 			"SELECT ip, port, maxSlots, maxSlots - usedSlots availSlots FROM hormones_tissues
-				WHERE organId = ? AND tissueId = ? AND maxSlots - usedSlots > 0
+				WHERE organId = ? AND tissueId = ? AND maxSlots - usedSlots > 0 AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 5
 				ORDER BY availSlots DESC, maxSlots ASC",
 			[["i", $this->getPlugin()->getOrganId()], ["s", $this->getPlugin()->getTissueId()]]);
 		if(!($result instanceof MysqlSelectResult)){
@@ -199,7 +200,8 @@ class BalancerModule implements Listener{
 			"maxSlots" => MysqlSelectResult::TYPE_INT,
 			"availSlots" => MysqlSelectResult::TYPE_INT
 		]);
-		$players = $this->getPlugin()->getServer()->getOnlinePlayers();
+		/** @var Player[] $players */
+		$players = array_reverse($this->getPlugin()->getServer()->getOnlinePlayers());
 		foreach($players as $player){
 			$player->transfer($result->rows[0]["ip"], $result->rows[0]["port"], "Server stop transfer");
 			if((--$result->rows[0]["availSlots"]) === 0){

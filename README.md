@@ -136,7 +136,7 @@ with the lowest % online players). Set the `balancer`.`enabled` in config.yml to
 on the server reach the limit in `balancer`.`playerSoftLimit`, players trying to join the server will be transferred to
 the most empty tissue in the organ. If all tissues in the organ are currently full, the player will be kicked.
 
-Players whose name is listed in `balancer`.`exemptPlayers` will be exempted from this kind of transfer. You may want to
+Players whose name is listed in `balancer`.`fullExemptPlayers` will be exempted from this kind of transfer. You may want to
 put the names of your server ops here.
 
 Server-full transfer does not do anything with the `max-players` option in server.properties. If you want to allow the
@@ -147,9 +147,46 @@ It is not practical. Full-transfer is executed when the player just connected, e
 like PurePerms setup the player's permissions. Players must be transferred as soon as possible to prevent sending
 unnecessary data to the player, which contradicts with the initiatives of "load balancing".
 
+#### Always transfer
+In the scenario in the Introduction above, I mentioned an "entry" tissue. It's the server address visible to the players
+such that players join this "entry" tissue every time they enter your network. However, if players stay online on the
+entry tissue, it will be overused because it is responsible for both handling online players and redirecting new
+player's traffic. So instead, no players will be allowed to stay on the "entry" tissue, and they will always be
+transferred to one of the tissues in the "lobby" organ.
+
+This can be accomplished by always-transfer. The `balancer`.`alwaysTransfer` in config.yml can be set to an organ name
+such that players will always be transferred to that organ. Apart from putting an explicit organ name, you can also put
+`"last"`. Hormones will then transfer the player to the organ of the last tissue (with `balancer`.`logLast` enabled) the
+player has joined.
+
+If all tissues in the destination organ are full, or if it is `"last"` but the player has never joined any tissues with
+`balancer`.`logLast` enabled, Hormones will attempt to transfer the player to the organ specified in
+`balancer`.`alwaysFallback` instead (if it is not `false`).
+
+If `balancer`.`alwaysFallback` is `false`, or all tissues in the `balancer`.`alwaysFallback` organ are full, the player
+will be kicked if `balancer`.`alwaysKick` is enabled, or stay on the current tissue otherwise.
+
+Players in the `balancer`.`alwaysExemptPlayers` list will never be transferred due to always-transfer.
+
+<!--
+TODO finish an example flowchart:
+
+```
+Player -----[if balancer.alwaysTransfer]---- > Are there available --+--[Yes]---- > Transfer to a lobby tissue
+join     |  [ is "lobby"               ]        lobby tissues?       +  [No]----- >
+         |
+         +--[if balancer.alwaysTransfer is "last"]---- > Did player join the -----[Yes, last organ]---- > Are there available
+         |                                               network before?          [was skyblock   ]       skyblock tissues?
+```
+-->
+
+#### Stop transfer
+When a tissue stops, transfer all online players to other tissues in the organ.
+
+If there are not enough slots in the organ to transfer players to, they will be kicked due to server stop. Players who
+logged in more recently have higher chance to get transferred instead of getting kicked.
+
 <!-- TODO feature: exempt internally transferred players -->
-<!-- TODO feature: joinTransfer -->
-<!-- TODO feature: stopTransfer -->
 
 #### Organic transfer
 Conventionally, players are transferred to another server upon actions like typing a command, clicking on a sign, etc.
