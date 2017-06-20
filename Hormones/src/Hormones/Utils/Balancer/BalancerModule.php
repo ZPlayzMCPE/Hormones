@@ -112,6 +112,9 @@ class BalancerModule implements Listener{
 			}
 		}
 		$this->logLast = (bool) $this->getPlugin()->getConfig()->getNested("balancer.logLast", true);
+		if($this->logsLast()){
+			$this->getPlugin()->getServer()->getScheduler()->scheduleRepeatingTask(new UpdateAccountStateTask($this->getPlugin()), 10);
+		}
 
 		$this->getPlugin()->getServer()->getPluginManager()->registerEvents($this, $plugin);
 	}
@@ -180,7 +183,7 @@ class BalancerModule implements Listener{
 
 	public function e_onJoin(PlayerJoinEvent $event){
 		if($this->logsLast()){
-			// TODO logLast
+			$this->plugin->getServer()->getScheduler()->scheduleAsyncTask(new UpdateAccountStateTask($this->getPlugin(), $event->getPlayer()));
 		}
 	}
 

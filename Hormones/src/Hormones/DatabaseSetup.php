@@ -41,7 +41,7 @@ class DatabaseSetup{
 			"CREATE TABLE IF NOT EXISTS hormones_metadata (name VARCHAR(20) PRIMARY KEY, val VARCHAR(20))");
 		$afterUnlocks = [];
 		$mysqli->query(/** @lang MySQL */
-			"LOCK TABLES hormones_metadata WRITE, hormones_organs WRITE, hormones_organs AS organs_2 WRITE, hormones_blood WRITE, hormones_tissues WRITE"); // this should lock all startup operations by Hormones
+			"LOCK TABLES hormones_metadata WRITE, hormones_organs WRITE, hormones_organs AS organs_2 WRITE, hormones_blood WRITE, hormones_tissues WRITE, hormones_accstate WRITE"); // this should lock all startup operations by Hormones
 
 		$result = MysqlResult::executeQuery($mysqli, "SELECT val FROM hormones_metadata WHERE name = ?", [["s", "version"]]);
 		if($result instanceof MysqlSelectResult and count($result->rows) > 0){
@@ -58,11 +58,23 @@ class DatabaseSetup{
 						foreach([
 							        /** @lang MySQL */
 							        "SET FOREIGN_KEY_CHECKS=0",
-							        /** @lang MySQL */
 							        "ALTER TABLE hormones_organs MODIFY organId TINYINT UNSIGNED NOT NULL",
 							        /** @lang MySQL */
 							        "SET FOREIGN_KEY_CHECKS=1",
+							        "CREATE TABLE hormones_accstate (
+										username   VARCHAR(20) PRIMARY KEY,
+										lastOrgan  TINYINT UNSIGNED DEFAULT NULL,
+										lastTissue CHAR(32)         DEFAULT NULL,
+										lastOnline TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
+										FOREIGN KEY (lastOrgan) REFERENCES hormones_organs (organId)
+											ON UPDATE CASCADE
+											ON DELETE SET NULL,
+										FOREIGN KEY (lastTissue) REFERENCES hormones_tissues (tissueId)
+											ON UPDATE CASCADE
+											ON DELETE SET NULL
+									)"
 						        ] as $query){
+							$plugin->getLogger()->debug($query);
 							$mysqli->query($query);
 						}
 						$afterUnlocks[] = /** @lang MySQL */
@@ -133,7 +145,7 @@ class DatabaseSetup{
 					$hormone->dbVersion = HormonesPlugin::DATABASE_VERSION;
 					$hormone->release($plugin);
 				}
-			}elseif($version > HormonesPlugin::DATABASE_VERSION){
+			}elseif(($version >> 16) > (HormonesPlugin::DATABASE_VERSION >> 16)){
 				$plugin->getLogger()->critical("Please update the plugin! (You already updated it on some other servers)");
 				$plugin->getServer()->getPluginManager()->disablePlugin($plugin);
 				return false;
@@ -156,6 +168,7 @@ class DatabaseSetup{
 		$mysqli->query(/** @lang MySQL */
 			"UNLOCK TABLES");
 		foreach($afterUnlocks as $query){
+			$plugin->getLogger()->debug($query);
 			$mysqli->query($query);
 		}
 
@@ -176,16 +189,10 @@ class DatabaseSetup{
 
 	private static function initialSetup(\mysqli $mysqli, Logger $logger){
 		$queries = [
-			/** @lang MySQL */
-			"CREATE TABLE IF NOT EXISTS hormones_metadata (
-				name VARCHAR(20) PRIMARY KEY,
-				val VARCHAR(20)
-			);",
-			/** @lang MySQL */
-			"CREATE TABLE IF NOT EXISTS hormones_organs (
+			"CREATE TABLE hormones_organs (
 				organId TINYINT UNSIGNED PRIMARY KEY,
 				name VARCHAR(64) UNIQUE
-			) AUTO_INCREMENT = 0;",
+			) AUTO_INCREMENT = 0",
 			/** @lang MySQL */
 			"CREATE TRIGGER organs_organId_limit BEFORE INSERT ON hormones_organs FOR EACH ROW
 			BEGIN
@@ -251,17 +258,15 @@ class DatabaseSetup{
 						END IF;
 					END IF;
 				END",
-			/** @lang MySQL */
-			"CREATE TABLE IF NOT EXISTS hormones_blood (
+			"CREATE TABLE hormones_blood (
 				hormoneId BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
 				type VARCHAR(64) NOT NULL,
 				receptors BIT(64) DEFAULT x'FFFFFFFFFFFFFFFF',
 				creation TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				expiry TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				json TEXT
-			);",
-			/** @lang MySQL */
-			"CREATE TABLE IF NOT EXISTS hormones_tissues (
+			)",
+			"CREATE TABLE hormones_tissues (
 				tissueId CHAR(32) PRIMARY KEY,
 				organId TINYINT UNSIGNED NOT NULL,
 				lastOnline TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -273,16 +278,27 @@ class DatabaseSetup{
 				displayName VARCHAR(100),
 				processId SMALLINT UNSIGNED,
 				FOREIGN KEY (organId) REFERENCES hormones_organs(organId) ON UPDATE CASCADE ON DELETE RESTRICT
-			);",
-			/** @lang MySQL */
-			"CREATE TABLE IF NOT EXISTS hormones_mod_banlist (
+			)",
+			"CREATE TABLE hormones_mod_banlist (
 				name VARCHAR(20) PRIMARY KEY,
 				start TIMESTAMP NOT NULL,
 				stop TIMESTAMP,
 				message VARCHAR(512) DEFAULT '',
 				organs BIT(64) DEFAULT x'FFFFFFFFFFFFFFFF',
 				doer VARCHAR(20)
-			);"
+			)",
+			"CREATE TABLE hormones_accstate (
+				username   VARCHAR(20) PRIMARY KEY,
+				lastOrgan  TINYINT UNSIGNED DEFAULT NULL,
+				lastTissue CHAR(32)         DEFAULT NULL,
+				lastOnline TIMESTAMP        DEFAULT CURRENT_TIMESTAMP,
+				FOREIGN KEY (lastOrgan) REFERENCES hormones_organs (organId)
+					ON UPDATE CASCADE
+					ON DELETE SET NULL,
+				FOREIGN KEY (lastTissue) REFERENCES hormones_tissues (tissueId)
+					ON UPDATE CASCADE
+					ON DELETE SET NULL
+			)",
 		];
 		foreach($queries as $query){
 			$logger->debug(substr($query, 0, 30));
