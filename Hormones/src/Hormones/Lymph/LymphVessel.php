@@ -82,7 +82,7 @@ class LymphVessel extends QueryMysqlTask{
 				SELECT GREATEST(0, MAX(maxSlots - usedSlots)) maxAvail FROM hormones_tissues
 					WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 AND tissueId <> ?
 			) t INNER JOIN hormones_tissues t2 ON t.maxAvail = t2.maxSlots - t2.usedSlots
-				AND organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 AND tissueId <> ?", [
+				AND organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 10 AND tissueId <> ? LIMIT 1", [
 				["i", $this->organId], ["s", $this->tissueId],
 				["i", $this->organId], ["s", $this->tissueId]
 			]);
