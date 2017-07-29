@@ -105,7 +105,7 @@ abstract class HormonesCommand extends Command implements PluginIdentifiableComm
 			}
 			$secs += $coef * $units[$unit];
 		}
-		return $secs;
+		return (int) round($secs);
 	}
 
 	public static function ui_secsToPresent(int $secs) : string{

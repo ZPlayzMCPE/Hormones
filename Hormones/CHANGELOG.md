@@ -9,4 +9,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 - Update for 3.0.0-ALPHA7, backward incompatible
 - Fixed `UnknownHormoneEvent` not providing the receptors
 
+### Fixed
+- [issue16]
+
 [Unreleased]: https://github.com/LegendOfMCPE/Hormones/compare/HEAD...HEAD
+[issue16]: https://github.com/LegendOfMCPE/Hormones/issues/16
