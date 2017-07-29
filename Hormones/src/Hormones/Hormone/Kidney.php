@@ -37,7 +37,7 @@ class Kidney extends PluginTask{
 		}
 	}
 
-	public function onRun($currentTick){
+	public function onRun(int $currentTick){
 		/** @var HormonesPlugin $plugin */
 		$plugin = $this->getOwner();
 		$plugin->getServer()->getScheduler()->scheduleAsyncTask(new DirectQueryMysqlTask($plugin->getCredentials(),

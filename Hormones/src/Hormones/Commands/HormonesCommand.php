@@ -20,6 +20,7 @@ namespace Hormones\Commands;
 use Hormones\HormonesPlugin;
 use pocketmine\command\Command;
 use pocketmine\command\PluginIdentifiableCommand;
+use pocketmine\plugin\Plugin;
 
 abstract class HormonesCommand extends Command implements PluginIdentifiableCommand{
 	private $plugin;
@@ -29,7 +30,10 @@ abstract class HormonesCommand extends Command implements PluginIdentifiableComm
 		$this->plugin = $plugin;
 	}
 
-	public function getPlugin() : HormonesPlugin{
+	/**
+	 * @return Plugin|HormonesPlugin
+	 */
+	public function getPlugin() : Plugin{
 		return $this->plugin;
 	}
 

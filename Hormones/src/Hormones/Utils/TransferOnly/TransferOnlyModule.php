@@ -166,7 +166,7 @@ class TransferOnlyModule implements Listener{
 					$this->player = $player;
 				}
 
-				public function onRun($currentTick){
+				public function onRun(int $currentTick){
 					$this->module->confirmTransferOrKick($this->player);
 				}
 			}, 1);

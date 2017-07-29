@@ -34,7 +34,7 @@ class PenaltyCommand extends HormonesCommand{
 		$this->setPermission("hormones.moderation.moderator.sectional.{$this->type};hormones.moderation.moderator.global.{$this->type}");
 	}
 
-	public function execute(CommandSender $sender, $commandLabel, array $args){
+	public function execute(CommandSender $sender, string $commandLabel, array $args){
 		if(!$this->testPermission($sender)){
 			return false;
 		}

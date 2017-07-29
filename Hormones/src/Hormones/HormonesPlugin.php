@@ -136,7 +136,7 @@ class HormonesPlugin extends PluginBase{
 			$this->getServer()->getScheduler()->scheduleDelayedRepeatingTask(new class($this) extends PluginTask{
 				private $i = 0;
 
-				public function onRun($currentTick){
+				public function onRun(int $currentTick){
 					$this->getOwner()->getServer()->dispatchCommand(new ConsoleCommandSender(), "status");
 					$this->getOwner()->getServer()->dispatchCommand(new ConsoleCommandSender(), "hormones");
 					++$this->i;

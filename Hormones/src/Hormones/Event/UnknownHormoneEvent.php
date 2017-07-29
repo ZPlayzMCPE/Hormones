@@ -36,9 +36,10 @@ class UnknownHormoneEvent extends HormonesEvent{
 	/** @var mixed[] */
 	private $respondArgs;
 
-	public function __construct(HormonesPlugin $plugin, string $type){
+	public function __construct(HormonesPlugin $plugin, string $type, string $receptors){
 		parent::__construct($plugin);
 		$this->type = $type;
+		$this->receptors = $receptors;
 	}
 
 	public function getType() : string{

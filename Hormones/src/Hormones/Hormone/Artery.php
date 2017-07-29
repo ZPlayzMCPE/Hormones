@@ -104,6 +104,6 @@ class Artery extends QueryMysqlTask{
 		}
 		$plugin->getTimers()->arteryCycle->addDatum(microtime(true) - $this->objectCreated);
 		$plugin->setLastArterialHormoneId($lastHormoneId);
-		$server->getScheduler()->scheduleAsyncTask(new Artery($this->getCredentials(), $lastHormoneId, $this->organId, $this->normal));
+		$server->getScheduler()->scheduleAsyncTask(new Artery($this->getCredentials(), $lastHormoneId, $this->organId));
 	}
 }
