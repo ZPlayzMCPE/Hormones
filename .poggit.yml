@@ -7,6 +7,7 @@ projects:
       stubs: =
     includeFiles:
       /phagocyte.php: stubs/phagocyte.php
+    icon: hormones.png
 
     libs:
       - src: poggit/libasynql/libasynql

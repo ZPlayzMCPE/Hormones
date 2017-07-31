@@ -43,12 +43,14 @@ use spoondetector\SpoonDetector;
 
 class HormonesPlugin extends PluginBase{
 	const DATABASE_MAJOR_VERSION = 1; // only to be bumped if backwards-incompatible
-	const DATABASE_MINOR_VERSION = 0; // only to be bumped if plugin cannot work with last database
+	const DATABASE_MINOR_VERSION = 1; // only to be bumped if plugin cannot work with last database
 
 	const DATABASE_VERSION = (HormonesPlugin::DATABASE_MAJOR_VERSION << 16) | (HormonesPlugin::DATABASE_MINOR_VERSION << 0);
 
 	/** @var Config|null */
 	private $myConfig;
+	/** @var \mysqli */
+	private $mysqli;
 
 	/** @var MysqlCredentials */
 	private $credentials;
@@ -100,7 +102,7 @@ class HormonesPlugin extends PluginBase{
 
 			$prop = $class->getProperty("configFile");
 			$prop->setAccessible(true);
-			$prop->setValue($this, $dataFolder."config.yml");
+			$prop->setValue($this, $dataFolder . "config.yml");
 		}
 	}
 
@@ -117,9 +119,14 @@ class HormonesPlugin extends PluginBase{
 			$this->getServer()->getPluginManager()->disablePlugin($this);
 			return;
 		}
+		if(strtolower($this->getConfig()->getNested("localize.organ")) === "last"){
+			$this->getLogger()->critical("\"last\" is an invalid organ name!");
+			$this->getServer()->getPluginManager()->disablePlugin($this);
+		}
 
 		$this->credentials = $cred = MysqlCredentials::fromArray($this->getConfig()->get("mysql"));
-		if(!DatabaseSetup::setupDatabase($cred, $this, $organId)){
+		$this->mysqli = $cred->newMysqli();
+		if(!DatabaseSetup::setupDatabase($cred, $this, $organId, $this->mysqli)){
 			$this->getServer()->getPluginManager()->disablePlugin($this);
 			return;
 		}
@@ -182,8 +189,11 @@ class HormonesPlugin extends PluginBase{
 	}
 
 	public function onDisable(){
+		if(isset($this->balancerModule)){
+			$this->getBalancerModule()->onDisable();
+		}
 		if(isset($this->credentials)){
-			ClearMysqlTask::closeAll($this, $this->getCredentials());
+			ClearMysqlTask::closeAll($this, $this->credentials);
 		}
 	}
 
@@ -194,9 +204,12 @@ class HormonesPlugin extends PluginBase{
 		return $this->myConfig;
 	}
 
+	public function connectMainThreadMysql() : \mysqli{
+		return $this->mysqli;
+	}
+
 	private function calcServerId(){
-		return md5($this->getServer()->getDataPath() . $this->getServer()->getIp() . $this->getServer()->getPort() .
-			$this->getConfig()->getNested("localize.name", "auto"));
+		return md5($this->getServer()->getDataPath() . $this->getServer()->getIp() . $this->getServer()->getPort() . Utils::getMachineUniqueId()->toString());
 	}
 
 	public function getTissueId(){
