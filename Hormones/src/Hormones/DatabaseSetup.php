@@ -41,7 +41,8 @@ class DatabaseSetup{
 		$mysqli = $cred->newMysqli();
 		$mysqli->query("CREATE TABLE IF NOT EXISTS hormones_metadata (name VARCHAR(20) PRIMARY KEY, val VARCHAR(20))");
 
-		$mysqli->query("LOCK TABLES hormones_metadata WRITE, hormones_organs WRITE, hormones_blood WRITE, hormones_tissues WRITE, hormones_mod_banlist WRITE"); // this should lock all startup operations by Hormones
+		$mysqli->query(/** @lang MySQL */
+			"LOCK TABLES hormones_metadata WRITE, hormones_organs WRITE, hormones_blood WRITE, hormones_tissues WRITE"); // this should lock all startup operations by Hormones
 
 		$result = MysqlResult::executeQuery($mysqli, "SELECT val FROM hormones_metadata WHERE name = ?", [["s", "version"]]);
 		if($result instanceof MysqlSelectResult and count($result->rows) > 0){
@@ -138,15 +139,6 @@ class DatabaseSetup{
 				processId SMALLINT UNSIGNED,
 				FOREIGN KEY (organId) REFERENCES hormones_organs(organId) ON UPDATE CASCADE ON DELETE RESTRICT
 			);",
-			/** @lang MySQL */
-			"CREATE TABLE IF NOT EXISTS hormones_mod_banlist (
-				name VARCHAR(20) PRIMARY KEY,
-				start TIMESTAMP NOT NULL,
-				stop TIMESTAMP,
-				message VARCHAR(512) DEFAULT '',
-				organs BIT(64) DEFAULT x'FFFFFFFFFFFFFFFF',
-				doer VARCHAR(20)
-			);"
 		];
 		foreach($queries as $query){
 			$result = $mysqli->query($query);

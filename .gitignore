@@ -33,3 +33,7 @@
 # JIRA plugin
 # Crashlytics plugin (for Android Studio and IntelliJ)
 # Custom
+
+### PocketMine stuff
+*.log
+config.yml

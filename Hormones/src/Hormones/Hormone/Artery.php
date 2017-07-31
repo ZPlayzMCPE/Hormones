@@ -32,7 +32,6 @@ class Artery extends QueryMysqlTask{
 	private $organId;
 	private $objectCreated;
 
-	private $normal;
 	private $virtualMax;
 
 	public function __construct(MysqlCredentials $credentials, int $hormonesAfter, int $organId){
@@ -74,30 +73,28 @@ class Artery extends QueryMysqlTask{
 			return;
 		}
 		$lastHormoneId = $this->hormonesAfter;
-		if($this->normal){
-			$result = $this->getResult();
-			if(!$plugin->isEnabled()){
-				return;
+		$result = $this->getResult();
+		if(!$plugin->isEnabled()){
+			return;
+		}
+		if($result instanceof MysqlErrorResult){
+			$plugin->getLogger()->logException($result->getException());
+			return;
+		}elseif($result instanceof MysqlSelectResult){
+			$result->fixTypes([
+				"hormoneId" => MysqlSelectResult::TYPE_INT,
+				"type" => MysqlSelectResult::TYPE_STRING,
+				"receptors" => MysqlSelectResult::TYPE_STRING,
+				"creationTime" => MysqlSelectResult::TYPE_INT,
+				"expiryTime" => MysqlSelectResult::TYPE_INT,
+				"json" => MysqlSelectResult::TYPE_STRING
+			]);
+			foreach($result->rows as $row){
+				Hormone::handleRow($plugin, $row);
+				$lastHormoneId = $row["hormoneId"];
 			}
-			if($result instanceof MysqlErrorResult){
-				$plugin->getLogger()->logException($result->getException());
-				return;
-			}elseif($result instanceof MysqlSelectResult){
-				$result->fixTypes([
-					"hormoneId" => MysqlSelectResult::TYPE_INT,
-					"type" => MysqlSelectResult::TYPE_STRING,
-					"receptors" => MysqlSelectResult::TYPE_STRING,
-					"creationTime" => MysqlSelectResult::TYPE_INT,
-					"expiryTime" => MysqlSelectResult::TYPE_INT,
-					"json" => MysqlSelectResult::TYPE_STRING
-				]);
-				foreach($result->rows as $row){
-					Hormone::handleRow($plugin, $row);
-					$lastHormoneId = $row["hormoneId"];
-				}
-				$plugin->onArteryDiastole();
-				$plugin->getTimers()->arteryNet->addDatum($result->getTiming());
-			}
+			$plugin->onArteryDiastole();
+			$plugin->getTimers()->arteryNet->addDatum($result->getTiming());
 		}
 		if($this->hormonesAfter === Artery::STARTUP_ID){
 			$lastHormoneId = $this->virtualMax;

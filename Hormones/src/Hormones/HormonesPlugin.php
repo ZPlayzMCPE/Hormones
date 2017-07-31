@@ -89,6 +89,21 @@ class HormonesPlugin extends PluginBase{
 		return $server->getPluginManager()->getPlugin("Hormones");
 	}
 
+	public function onLoad(){
+		$opts = getopt("", ["hormones.data_folder:"]);
+		if(isset($opts["hormones.data_folder"])){
+			$dataFolder = rtrim(realpath($opts["hormones.data_folder"]), "/\\") . "/";
+			$class = new \ReflectionClass(PluginBase::class);
+			$prop = $class->getProperty("dataFolder");
+			$prop->setAccessible(true);
+			$prop->setValue($this, $dataFolder);
+
+			$prop = $class->getProperty("configFile");
+			$prop->setAccessible(true);
+			$prop->setValue($this, $dataFolder."config.yml");
+		}
+	}
+
 	public function onEnable(){
 		SpoonDetector::printSpoon($this, 'spoon.txt');
 
@@ -96,7 +111,7 @@ class HormonesPlugin extends PluginBase{
 
 		if($this->getConfig()->get("Dear User") === 'Please delete this line after you have finished setting up the config file.'){
 			$this->getLogger()->alert("Thank you for using Hormones. Please set up Hormones by editing the config file at " . realpath($this->getDataFolder() . "config.yml"));
-			$this->getLogger()->alert("If you have already done so, please delete the \"Dear User\" line (usually line 2) in the config file.");
+			$this->getLogger()->alert("If you have finished editing the config file, please delete the \"Dear User\" line (usually line 2) in the config file.");
 			$this->getLogger()->alert("Hormones will not be enabled until you have done so");
 
 			$this->getServer()->getPluginManager()->disablePlugin($this);
@@ -167,7 +182,9 @@ class HormonesPlugin extends PluginBase{
 	}
 
 	public function onDisable(){
-		ClearMysqlTask::closeAll($this, $this->getCredentials());
+		if(isset($this->credentials)){
+			ClearMysqlTask::closeAll($this, $this->getCredentials());
+		}
 	}
 
 	public function getConfig() : Config{
