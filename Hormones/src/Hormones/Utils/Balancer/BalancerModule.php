@@ -24,7 +24,6 @@ use libasynql\result\MysqlErrorResult;
 use libasynql\result\MysqlResult;
 use libasynql\result\MysqlSelectResult;
 use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\event\server\QueryRegenerateEvent;
 use pocketmine\Player;
@@ -178,12 +177,6 @@ class BalancerModule implements Listener{
 					$this->getPlugin()->getLogger()->debug("Event cancelled");
 				}
 			}
-		}
-	}
-
-	public function e_onJoin(PlayerJoinEvent $event){
-		if($this->logsLast()){
-			$this->plugin->getServer()->getScheduler()->scheduleAsyncTask(new UpdateAccountStateTask($this->getPlugin(), $event->getPlayer()));
 		}
 	}
 

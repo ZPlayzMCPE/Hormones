@@ -55,9 +55,8 @@ class FindLastOrganicTissueTask extends FindOrganicTissueTask{
 				return;
 			}
 			// all tissues in last organ are full, go to fallback
-		}else{
-			// no last organ, also go to fallback
 		}
+		// else no last organ, also go to fallback
 		$this->organId = $this->fallbackId;
 		$this->organName = $this->fallbackName;
 		parent::execute();
