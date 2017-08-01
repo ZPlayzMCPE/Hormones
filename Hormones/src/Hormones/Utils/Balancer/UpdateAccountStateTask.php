@@ -36,7 +36,6 @@ class UpdateAccountStateTask extends PluginTask{
 					["s", strtolower($player->getName())],
 					["i", $plugin->getOrganId()],
 					["s", $plugin->getTissueId()],
-					["s", strtolower($player->getName())],
 					["i", $plugin->getOrganId()],
 					["s", $plugin->getTissueId()],
 				]));
