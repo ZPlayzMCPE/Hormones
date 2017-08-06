@@ -33,12 +33,17 @@ class FindOrganicTissueTask extends QueryMysqlTask{
 	protected $organId;
 	/** @var string */
 	protected $tissueId;
+	/**
+	 * @var string
+	 */
+	protected $cause;
 
-	public function __construct(HormonesPlugin $plugin, Player $player, string $organName, int $organId = null, callable $onUnknownOrgan = null, callable $onServersFull = null){
+	public function __construct(HormonesPlugin $plugin, Player $player, string $cause, string $organName, int $organId = null, callable $onUnknownOrgan = null, callable $onServersFull = null){
 		parent::__construct($plugin->getCredentials(), [$plugin, $player, $onUnknownOrgan, $onServersFull]);
 		$this->organName = $organName;
 		$this->organId = $organId;
 		$this->tissueId = $plugin->getTissueId();
+		$this->cause = $cause;
 	}
 
 	protected function execute(){
@@ -80,7 +85,7 @@ class FindOrganicTissueTask extends QueryMysqlTask{
 		}elseif($result instanceof MysqlSelectResult){
 			if(count($result->rows) === 1){
 				$player->transfer($result->rows[0]["ip"], $result->rows[0]["port"],
-					"Transferring you to the least full $this->organName server: " . $result->rows[0]["displayName"]);
+					"$this->cause: Transferring you to the least full $this->organName server: " . $result->rows[0]["displayName"]);
 			}else{
 				if(is_callable($onServersFull)){
 					$onServersFull();
