@@ -71,7 +71,7 @@ class BalancerModule implements Listener{
 
 		$this->stopTransfer = (bool) $this->getPlugin()->getConfig()->getNested("balancer.stopTransfer", false);
 
-		$this->alwaysTransferName = $this->getPlugin()->getConfig()->getNested("balancer.stopTransfer", false);
+		$this->alwaysTransferName = $this->getPlugin()->getConfig()->getNested("balancer.alwaysTransfer", false);
 		if(!$this->alwaysTransferName){
 			$this->alwaysTransferName = null;
 		}else{

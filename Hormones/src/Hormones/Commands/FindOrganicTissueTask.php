@@ -31,11 +31,14 @@ class FindOrganicTissueTask extends QueryMysqlTask{
 	protected $organName;
 	/** @var int|null */
 	protected $organId;
+	/** @var string */
+	protected $tissueId;
 
 	public function __construct(HormonesPlugin $plugin, Player $player, string $organName, int $organId = null, callable $onUnknownOrgan = null, callable $onServersFull = null){
 		parent::__construct($plugin->getCredentials(), [$plugin, $player, $onUnknownOrgan, $onServersFull]);
 		$this->organName = $organName;
 		$this->organId = $organId;
+		$this->tissueId = $plugin->getTissueId();
 	}
 
 	protected function execute(){
@@ -54,9 +57,9 @@ class FindOrganicTissueTask extends QueryMysqlTask{
 			}
 		}
 		$this->setResult(MysqlResult::executeQuery($db, "SELECT ip, port, displayName FROM hormones_tissues
-				WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 5 AND maxSlots > usedSlots
+				WHERE organId = ? AND UNIX_TIMESTAMP() - UNIX_TIMESTAMP(lastOnline) < 5 AND maxSlots > usedSlots AND tissueId <> ?
 				ORDER BY (maxSlots - usedSlots) DESC, maxSlots ASC LIMIT 1",
-			[["i", $this->organId]]));
+			[["i", $this->organId], ["s", $this->tissueId]]));
 	}
 
 	public function onCompletion(Server $server){
