@@ -2,8 +2,8 @@ name: Hormones
 version: 2.1.0-B1
 api:
 - 3.0.0-alpha9
-3.0.0-alpha10
-main: Hormones\HormonesPlugin
+- 3.0.0-alpha10
+Main: Hormones\HormonesPlugin
 authors:
 - SOFe
 softdepend:
