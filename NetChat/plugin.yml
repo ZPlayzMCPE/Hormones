@@ -1,7 +1,8 @@
 name: NetChat
-version: 1.0.0-alpha
+version: 1.0.0-B1
 api:
-- 3.0.0-alpha5
+- 3.0.0-alpha9
+- 3.0.0-alpha10
 main: Hormones\NetChat\NetChat
 authors:
 - SOFe
